@@ -9,6 +9,7 @@
 	
 	<script type='text/javascript' src='js/d3.prototype.extensions.js'></script>
 	<script type='text/javascript' src='js/main.js'></script>
+	<script type='text/javascript' src='js/sdg_mapping.js'></script>
 
 	<link rel='icon' type='image/x-icon' href='favicon.ico'>
 
@@ -202,6 +203,7 @@
 
 	const basetags_params = new URLSearchParams(tags_path.search)
 	basetags_params.append('token', token)
+	basetags_params.append('type', 'sdgs')
 	let mobilization = 28
 
 	const highlighttags_params = new URLSearchParams(basetags_params)
@@ -233,6 +235,17 @@
 		rmLoader()
 		let [ tags_data, regions, countries, taxonomy, tags_portfolio ] = results
 
+		tags_data.forEach(d => {
+			d.key = sdgMap.get(d.id)
+		})
+		tags_data.sort((a, b) => a.id - b.id)
+		let packdata = tags_data.nest('key')
+		packdata.forEach(d => {
+			d.id = d.key
+			d.count = d3.sum(d.values, c => c.count)
+			delete d.key
+		})
+
 		renderMenu(regions, countries, tags_data)
 
 		const selectids = tags_data.map(d => d.id)
@@ -261,28 +274,24 @@
 			d.initial_idx = i
 		})
 		
-		const packdata = JSON.parse(JSON.stringify(taxonomy)).filter(d => {
-			return d.id.intersection(selectids).length
-		})
-		packdata.forEach(d => {
-			d.select_count = tags_data.find(c => d.id.includes(c.id))?.count ?? 0
-			d.highlight = portfolio_ids.some(c => d.id.includes(c)) || false
-		})
+		// const packdata = JSON.parse(JSON.stringify(taxonomy))
+		// .filter(d => {
+		// 	return d.id.intersection(selectids).length
+		// })
+		// packdata.forEach(d => {
+		// 	d.select_count = tags_data.find(c => d.id.includes(c.id))?.count ?? 0
+		// 	d.highlight = portfolio_ids.some(c => d.id.includes(c)) || false
+		// })
+		// console.log(packdata)
 
-		const contains_unclustered = packdata.some(d => d.clusters === -1)
+		// const contains_unclustered = packdata.some(d => d.clusters === -1)
 
 		packdata.forEach(d => {
 			d.orid = d.id
-			d.id = `root.${contains_unclustered ? `${d.clusters >= 0}.` : ''}${d.keywords.replace(/\,\s/g, '-')}.${d.split}`
-			d.value = d.select_count ?? d.total_count
+			d.id = `root.true.${tags_data.find(c => c.key === d.id).name}`
+			d.value = d.count
 		})
-		packdata.unique('keywords').forEach(d => {
-			packdata.push({ id: `root.${contains_unclustered ? `${d.clusters >= 0}.` : ''}${d.keywords.replace(/\,\s/g, '-')}` })
-		})
-		if (contains_unclustered) {
-			packdata.push({ id: 'root.true' })
-			packdata.push({ id: 'root.false' })
-		}
+		packdata.push({ id: 'root.true' })
 		packdata.push({ id: 'root' })
 		
 		drawPack(packdata)
@@ -612,7 +621,23 @@
 			.attr('r', d => d.r || 5)
 
 		const leaf = node.filter(d => !d.children)
-		let leaf_text = leaf.selectAll('text')
+		let sdg_text = leaf.selectAll('text.sdg')
+			.data(d => [d])
+		sdg_text.exit().remove()
+
+		sdg_text = sdg_text.enter()
+			.append('text')
+			.attrs({ 
+				'class': 'sdg',
+				'x': 0,
+				'y': 0 //(d, i, nodes) => (i - nodes.length / 2 - 0.5) * 14
+			}).styles({
+				'pointer-events': 'none',
+				'font-size': '24px',
+				'fill': '#FFF'
+			}).text(d => d.data.orid)
+
+		let leaf_text = leaf.selectAll('text.leaf-label')
 			.data(d => [d])
 		leaf_text.exit().remove()
 
