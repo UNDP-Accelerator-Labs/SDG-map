@@ -1,3 +1,17 @@
+Array.prototype.chunk = function (size) {
+	const groups = [];
+	for (let i = 0; i < this.length; i += size) {
+		groups.push(this.slice(i, i + size));
+	}
+	return groups;
+};
+function chunk (arr, size) {
+	const groups = [];
+	for (let i = 0; i < arr.length; i += size) {
+		groups.push(arr.slice(i, i + size));
+	}
+	return groups;
+};
 Array.prototype.unique = function (key, onkey) {
 	const arr = []
 	this.forEach(d => {
@@ -83,3 +97,18 @@ Array.prototype.intersection = function (V2) {
 String.prototype.simplify = function () {
 	return this.valueOf().trim().replace(/[^\w\s]/gi, '').replace(/\s/g, '').toLowerCase()
 }
+
+Array.prototype.shuffle = function () {
+  let currentIndex = this.length;
+  let temporaryValue;
+  let randomIndex;
+
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    temporaryValue = this[currentIndex];
+    this[currentIndex] = this[randomIndex];
+    this[randomIndex] = temporaryValue;
+  }
+  return this;
+};

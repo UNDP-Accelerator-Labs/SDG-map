@@ -25,7 +25,7 @@
 			<div id='logo'>
 				<img src='imgs/branding/UNDP_accelerator_labs_logo_vertical_color_RGB.png'>
 				<h1>Action Learning Plans</h1>
-				<h2>Topic Browser</h2>
+				<h2>SDG Browser</h2>
 			</div>
 
 			<script type='text/javascript'>
@@ -184,6 +184,48 @@
 	const height = width
 	const padding = 60
 	const edit_layout = false
+
+	const colors = {
+	  'dark-blue': '#005687',
+	  'mid-blue': '#0468B1',
+	  'mid-blue-semi': 'rgba(4,104,177,.75)',
+	  'light-blue': '#32BEE1',
+
+	  'dark-red': '#A51E41',
+	  'mid-red': '#FA1C26',
+	  'light-red': '#F03C8C',
+
+	  'dark-green': '#418246',
+	  'mid-green': '#61B233',
+	  'light-green': '#B4DC28',
+
+	  'dark-yellow': '#FA7814',
+	  'mid-yellow': '#FFC10E',
+	  'light-yellow': '#FFF32A',
+
+	  'dark-grey': '#000000',
+	  'mid-grey': '#646464',
+	  'light-grey': '#969696',
+	};
+	const sdgcolors = [
+		'#E5233B', // 1
+		'#DDA839', // 2
+		'#4D9F39', // 3
+		'#C5182D', // 4
+		'#FF3B21', // 5
+		'#25BDE2', // 6
+		'#FCC30C', // 7
+		'#A21842', // 8
+		'#FD6924', // 9
+		'#DD1267', // 10
+		'#FD9D25', // 11
+		'#BE8B2F', // 12
+		'#3F7E44', // 13
+		'#0C97D9', // 14
+		'#56C02A', // 15
+		'#02689D', // 16
+		'#18486A', // 17
+	]
 	
 	const svg = d3.select('svg#bubbles')
 	.attrs({ 
@@ -195,7 +237,6 @@
 
 	const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
 	
-	// const platform = new URL('https://acclabs-actionlearningplans.azurewebsites.net')
 	const platform = new URL('https://learningplans.sdg-innovation-commons.org')
 	const tags_path = new URL('apis/fetch/tags', platform)
 	const regions_path = new URL('apis/fetch/regions', platform)
@@ -208,7 +249,6 @@
 
 	const highlighttags_params = new URLSearchParams(basetags_params)
 	new URLSearchParams(window.location.search).forEach((v, k) => {
-		// if (['h-countries'].includes(k)) highlighttags_params.append(k, v)
 		if (['countries'].includes(k)) basetags_params.append(k, v)
 		if (['regions'].includes(k)) basetags_params.append(k, v)
 		if (['mobilizations'].includes(k)) basetags_params.append(k, v) //mobilization = v
@@ -230,10 +270,85 @@
 
 	addLoader()
 
+
+	// LOAD PADS
+	const pads_path = new URL('apis/fetch/pads', platform)
+	const pads_queryparams = new URLSearchParams(pads_path.search)
+	pads_queryparams.append('output', 'json')
+	pads_queryparams.append('token', token)
+
+	// pads_queryparams.append('countries', 'json')
+	if (basetags_params.getAll('mobilizations').length) {
+		basetags_params.getAll('mobilizations').forEach(d => {
+			pads_queryparams.append('mobilizations', d)
+		})
+	} else pads_queryparams.append('mobilizations', mobilization)
+	pads_queryparams.append('include_imgs', true)
+	pads_queryparams.append('include_tags', true)
+	new URLSearchParams(window.location.search).forEach((v, k) => {
+		if (['countries'].includes(k)) pads_queryparams.append(k, v)
+		if (['regions'].includes(k)) pads_queryparams.append(k, v)
+
+	})
+
+	Promise.all([ GET(`${pads_path}?${pads_queryparams}`) ])
+	.then(results => {
+		const [ pads ] = results
+
+		const nodes = pads.flat().map(d => {
+			const sdgs = d.tags?.filter(c => c.type === 'sdgs').map(c => c.key)
+			return sdgs.map(c => {
+				return { sdg: c, pad: d.pad_id }
+			})
+
+		}).flat()
+		.nest('sdg')
+		.map(d => {
+			return { id: d.key, count: d.count }
+		})
+		console.log(nodes)
+
+		const links = []
+
+		pads.flat().forEach(d => {
+			const sdgs = d.tags?.filter(c => c.type === 'sdgs').map(c => c.key)
+			sdgs.forEach(c => {
+				const connections = sdgs.filter(b => b !== c)
+				connections.forEach(b => {
+					if (links.some(a => {
+						return (a.source === c && a.target === b) ||
+						(a.source === b && a.target === c)
+					})) {
+						const link = links.find(a => {
+							return (a.source === c && a.target === b) ||
+							(a.source === b && a.target === c)
+						})
+						link.count ++
+					} else {
+						links.push({ source: c, target: b, count: 1 })
+					}
+				})
+			})
+		})
+		console.log(links)
+
+		drawEdgeBundle(nodes, links, pads)
+		rmLoader()
+
+	}).catch(err => console.log(err))
+
+	/*
 	Promise.all(data_collection)
 	.then(results => {
 		rmLoader()
 		let [ tags_data, regions, countries, taxonomy, tags_portfolio ] = results
+
+		// nodes
+			// id: sdgs
+		// links
+			// source: sdgA
+			// target: sdgB
+			// value: # of pads connecting the two sdgs
 
 		tags_data.forEach(d => {
 			d.key = sdgMap.get(d.id)
@@ -309,6 +424,7 @@
 			console.log(taxonomy)
 		})
 	}).catch(err => console.log(err))
+	*/
 
 	function renderMenu (regions, countries, tags) {
 		// ADD THE mobilizations VALUES FOR NOW AS WE DO NOT ENABLE SELECTION YET
@@ -429,269 +545,231 @@
 		})
 	}
 
-	function drawPack (data) {
-		const drag = d3.drag()
-			.on('start', function (d) {
-				const sel = d3.select(this)
-				d.mx = d.x
-				d.my = d.y
-				sel.style('pointer-events', 'none')
-				.selectAll('text')
-				.classed('hide', true)
-			}).on('drag', function (d) {
-				const evt = d3.event
-				const sel = d3.select(this)
-				d.mx += evt.dx
-				d.my += evt.dy
-				sel.attr('transform', `translate(${d.mx},${d.my})`)
+	function drawEdgeBundle (nodes, links, pads) {
+		const polarToCartesian = function (angle, length, offset) {
+			if (!offset) offset = [0, 0];
+			const x = Math.cos(angle) * length + offset[0];
+			const y = Math.sin(angle) * length + offset[1];
+			return [x, y];
+		};
+		const getPosition = function (i, distance) {
+			const angle = (360 * i / nodes.length) * Math.PI / 180 - Math.PI / 2
+			const length = Math.min(width, height) * distance
+			const offset = [ width / 2, height / 2 ]
+			return polarToCartesian(angle, length, offset)
+		};
+		const chunk = function (arr, size) {
+			const groups = [];
+			for (let i = 0; i < arr.length; i += size) {
+				groups.push(arr.slice(i, i + size));
+			}
+			return groups;
+		};
 
-			}).on('end', function (d) {
-				const evt = d3.event
-				const { depth: target_depth, id: target_id, children } = evt.sourceEvent.target['__data__'] || d3.select(evt.sourceEvent.target).findAncestor('node')?.datum() || {}
-				const sel = d3.select(this)
-				
-				if (!target_depth || target_depth < d.depth - 1) {
-					sel.transition().attr('transform', `translate(${d.x},${d.y})`)
-				} else {
-					d.x = d.mx
-					d.y = d.my
-					d.data.id = `${target_id}.${d.id.substring(d.id.lastIndexOf('.') + 1).split(/(?=[A-Z][^A-Z])/g)[0]}`
-					d.data.clusters = children.map(d => d.data).unique('clusters', true)[0]
-					d.data.keywords = children.map(d => d.data).unique('keywords', true)[0]
-				}
-				sel.style('pointer-events', null)
-				drawPack(d3.selectAll('.node').data().map(d => d.data))
+		const nodeScale = d3.scaleLinear()
+			.domain(d3.extent(nodes, d => d.count))
+			.range([30, 60])
+		const linkScale = d3.scaleLinear()
+			.domain(d3.extent(links, d => d.count))
+			.range([1, 10])
+
+		const g = svg.styles({
+			'width': `calc(100% - ${padding}px)`,
+			'height': `calc(100% - ${padding}px)`,
+		}).select('g')
+
+		const link = g.addElems('path', 'link', links)
+			.attr('d', d => {
+				const source = getPosition(d.source - 1, .3)
+				const target = getPosition(d.target - 1, .3)
+				return `M ${source.join(' ')} Q ${width / 2} ${height / 2} ${target.join(' ')}`
+			}).styles({
+				'stroke': colors['light-grey'],
+				'stroke-opacity': .5,
+				'stroke-width': d => linkScale(d.count),
+				'fill': 'none',
 			})
 
+		const node = g.addElems('g', 'node', nodes.sort((a, b) => a.id - b.id))
+			.attr('transform', d => {
+				const pos = getPosition(d.id - 1, .3)
+				return `translate(${pos})`
+			})
+		node.addElems('circle')
+			.attrs({ 
+				'r': d => nodeScale(d.count), 
+				'title': d => d.id
+			})
+			.style('fill', d => {
+				return sdgcolors[d.id - 1]
+			})
+		node.addElems('image')
+			.attrs({
+				'href': d => `/imgs/sdgs/G${d.id}-l.svg`,
+				'width': d => nodeScale(d.count),
+				'height': d => nodeScale(d.count),
+				'x': d => -nodeScale(d.count) / 2,
+				'y': d => -nodeScale(d.count) / 2,
+			})
 
-		const color = d3.scaleSequential(d3.interpolateMagma)
-			.domain([-3, 3])
+		const txtvars = { fontsize: 10, dy: 1.4 }
+		const titlevars = { fontsize: 18, dy: 1.3 }
 
-		const stratify = d3.stratify()
-			.parentId(d => d.id.substring(0, d.id.lastIndexOf('.')))
+		const snippet = g.addElems('g', 'snippet', _ => {
+			return nodes.filter(d => [1, 5, 8, 11, 13, 17].includes(d.id))
+			.map(d => {
+				const pad = pads.flat().shuffle()
+				.find(c => {
+					return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.snippet && c.vignette && !c.title.includes('…')
+				})
 
-		const pack = d3.pack()
-			.size([ width - padding * 2, height - padding * 2])
-			.padding(20)
+				const title = pad.title.split(' ')
+				const tlines = chunk(title, 3)
 
-		const root = stratify(data)
-			.sum(d => d.value)
-			.sort((a, b) => b.value - a.value)
+				const snippet = pad.snippet.split(' ')
+				let lines = chunk(snippet, 5)
+				if (lines.length > 5) {
+					lines = lines.slice(0, 5)
+					lines.push(['...'])
+				}
 
-		pack(root)
-		const min_depth = Math.min(...root.descendants().unique('depth', true))
-		const max_depth = Math.max(...root.descendants().unique('depth', true))
+				const angle = (360 * d.id / nodes.length)
+				let anchor = 'start'
+				if (angle > 180) anchor = 'end'
+				let pos = getPosition(d.id - 1, .4)
+				if (angle < 90 || angle > 270) {
+					pos[1] -= (txtvars.fontsize * txtvars.dy * (lines.length + .5)) + (titlevars.fontsize * titlevars.dy * tlines.length)
+				}
+				return { id: d.id, pad, pos, anchor, lines, tlines }
+			})
+		}).attr('transform', d => `translate(${d.pos})`)
+		snippet.addElems('text', 'title')
+			.addElems('tspan', null, d => {
+				return d.tlines.map(c => {
+					return { line: c, anchor: d.anchor, id: d.id }
+				})
+			}).attrs({
+				'x': 0,
+				'dy': titlevars.fontsize * titlevars.dy,
+			}).styles({
+				'font-size': `${titlevars.fontsize}px`,
+				'font-weight': 'bold',
+				'text-anchor': d => d.anchor,
+				'fill': d => sdgcolors[d.id - 1]
+			})
+			.text(d => d.line.join(' '))
+		snippet.addElems('text', 'description')
+			.attr('transform', d => `translate(0, ${d.tlines.length * titlevars.fontsize * titlevars.dy + txtvars.fontsize * txtvars.dy * .5})`)
+			.addElems('tspan', null, d => {
+				return d.lines.map(c => {
+					return { line: c, anchor: d.anchor }
+				})
+			}).attrs({
+				'x': 0,
+				'dy': txtvars.fontsize * txtvars.dy,
+			}).style('text-anchor', d => d.anchor)
+			.text(d =>  d.line.join(' '))
+	}
 
-		const acclab_colors = d3.scaleOrdinal()
-			.domain(root.descendants().unique('depth', true))
-			.range(['#005687', '#0468B1', '#32BEE1'])
-
-		let node = svg.styles({
+	function drawGraph (nodes, links) {
+		const w = width
+		const h = height
+		const g = svg.styles({
 			'width': `calc(100% - ${padding}px)`,
 			'height': `calc(100% - ${padding}px)`,
 			// 'margin': `${padding}px 0 0 ${padding}px`
 		}).select('g')
-			.selectAll('g')
-		.data(root.descendants(), d => d.id)
-		node.exit().remove()
-		
-		node = node.enter().append('g')
-			.attrs({
-				'class': d => `node${(!d.children ? ' node--leaf' : d.depth ? '' : ' node--root')}`,
-				'transform': d => `translate(${(width - padding * 2) / 2},${(height - padding * 2) / 2})`
-			})
-		.each(function(d) { 
-			const sel = d3.select(this)
-			d.node = this 
-			if (sel.classed('node--leaf') && edit_layout) sel.call(drag)
-		}).on('mouseover', function (d) {
-			const sel = d3.select(this)
-			if (sel.classed('node--leaf')) {
-				sel.moveToFront()
-				d3.selectAll('.group-label')
-					.filter(c => d.parent.data.id === c.data.id)
-				.selectAll('tspan')
-					.transition()
-					.style('opacity', 0)
 
-				d3.selectAll('.node')
-					.classed('hover', c => d.parent.data.id === c.data.id)
-			}
-			sel.selectAll('text').classed('hide', false)
-			// hovered(true)
-		}).on('mouseout', function (d) {
-			const sel = d3.select(this)
-			if (sel.classed('node--leaf')) {
-				d3.selectAll('.group-label tspan')
-				.transition().style('opacity', 1)
+		const nodeScale = d3.scaleLinear()
+			.domain(d3.extent(nodes, d => d.count))
+			.range([30, 60])
+		const linkScale = d3.scaleLinear()
+			.domain(d3.extent(links, d => d.count))
+			.range([1, 20])
 
-				d3.selectAll('.node.hover')
-					.classed('hover', false)
-			}
-			sel.selectAll('text').classed('hide', true)
-			// hovered(false)
-		}).on('click', async function (d) {
-			const sel = d3.select(this)
-			if (d.children && d.depth !== 0) {
-				// HIGHLIGHT
-				d3.selectAll('circle.highlight').classed('highlight', false)
-				const circle = sel.select('circle').classed('highlight', true)
-				
-				// GET DATA
-				const tag_ids = d.children.map(c => c.data.orid).flat()
-				const cluster_name = d.children.map(c => c.data).flat().unique('keywords', true)
-				
-				const pads_path = new URL('apis/fetch/pads', platform)
-				const queryparams = new URLSearchParams(pads_path.search)
-				queryparams.append('output', 'json')
-				queryparams.append('token', token)
+		// nodes.sort((a, b) => a.count - b.count)
+		// const links = graph.links.filter(d => d.weight > .5 || d.weight < -.5)
 
-				// queryparams.append('countries', 'json')
-				if (basetags_params.getAll('mobilizations').length) {
-					basetags_params.getAll('mobilizations').forEach(d => {
-						queryparams.append('mobilizations', d)
-					})
-				} else queryparams.append('mobilizations', mobilization)
-				queryparams.append('include_imgs', true)
-				queryparams.append('include_tags', true)
-				new URLSearchParams(window.location.search).forEach((v, k) => {
-					if (['countries'].includes(k)) queryparams.append(k, v)
-					if (['regions'].includes(k)) queryparams.append(k, v)
+		const simulation = d3.forceSimulation(nodes)
+			.force('charge', d3.forceManyBody())//.strength(-3000))
+			.force('center', d3.forceCenter(width / 2, height / 2))
+			.force('x', d3.forceX(width / 2).strength(1))
+			.force('y', d3.forceY(height / 2).strength(1))
+			.force('link', d3.forceLink(links).id(d => d.id).distance(500).strength(1))
+			.on('tick', ticked)
 
-				})		
+		simulation.nodes(nodes)
+		simulation.force('link').links(links)
 
-				// GET TIMESERIES DATA
-				const timeseries_params = new URLSearchParams(tags_path.search)
-				timeseries_params.append('token', token)
-				timeseries_params.append('timeseries', true)
-				timeseries_params.append('aggregation', 'month')
-				timeseries_params.append('type', 'thematic_areas')
-				timeseries_params.delete('mobilizations')
-
-				tag_ids.forEach(c => {
-					queryparams.append('thematic_areas', c)
-					timeseries_params.append('tags', c)
+		function ticked () {
+			g.addElems('line', 'link', links, d => `${d.source.id}-${d.target.id}`)
+				.attrs({ 
+					'x1': d => d.source.x, 
+					'x2': d => d.target.x, 
+					'y1': d => d.source.y, 
+					'y2': d => d.target.y 
+				}).styles({ 
+					'stroke': colors['mid-blue'], 
+					'stroke-opacity': .75, 
+					'stroke-width': d => linkScale(d.count),
+					'pointer-events': 'none' 
 				})
 
-				addLoader()
-				let [ pads, timeseries ] = await Promise.all([ GET(`${pads_path}?${queryparams}`), GET(`${tags_path.origin}${tags_path.pathname}?${timeseries_params}`) ])
-				rmLoader()
-				pads = pads.flat().filter(d => d.status >= 2)
-				pads.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
-
-				const aggseries = []
-				timeseries.map(d => d.timeseries).flat()
-				.forEach(d => {
-					if (!aggseries.some(c => c.date === d.date)) aggseries.push(d)
-					else aggseries.find(c => c.date === d.date).count += d.count
+			const node = g.addElems('g', 'node', nodes, d => d.id)
+				.attr('transform', d => `translate(${[d.x, d.y]})`)
+			.on('mouseover', function (d) {
+				const sel = d3.select(this).moveToFront()
+				const parent = d3.select(this.parentNode)
+				sel.select('text').classed('hide', false)
+				sel.select('rect').classed('hide', false)
+					.attr('width', sel.select('text').node().getBBox().width + 10)
+				parent.selectAll('line.link')
+					.style('stroke', '#CCC')
+			})
+			.on('mouseout', function () {
+				const sel = d3.select(this)
+				const parent = d3.select(this.parentNode)
+				sel.select('text').classed('hide', true)
+				sel.select('rect').classed('hide', true)
+				parent.selectAll('line.link').style('stroke', '#CCC')
+			})
+			node.addElems('circle')
+				.attrs({ 
+					'r': d => nodeScale(d.count), 
+					'title': d => d.id
 				})
-				aggseries.forEach(d => d.date = new Date(d.date))
-				aggseries.sort((a, b) => a.date - b.date)
+				.style('fill', d => {
+					return sdgcolors[d.id - 1]
+				})
+			node.addElems('image')
+				.attrs({
+					'href': d => `/imgs/sdgs/G${d.id}.svg`,
+					'width': d => nodeScale(d.count),
+					'height': d => nodeScale(d.count),
+					'x': d => -nodeScale(d.count) / 2,
+					'y': d => -nodeScale(d.count) / 2,
+				})
 
-				displaySnippets({ title: cluster_name, data: pads, timeseries: aggseries })
-			} else if (sel.classed('node--leaf')) {
-				const parent = d3.selectAll('.node')
-				.filter(c => d.parent.data.id === c.data.id)
-				.node().dispatchEvent(new Event('click'))
-			}
-		}).merge(node)
-		
-		node.transition()
-			.duration(_ => 1000 + Math.random() * 2000)
-			.delay(_ => Math.random() * 1000)
-			.attr('transform', d => `translate(${d.x || 0},${d.y || 0})`)
-
-		let circle = node.selectAll('circle')
-			.data(d => [d])
-		circle.exit().remove()
-		
-		circle = circle.enter().append('circle')
-			.attrs({
-				'id': d => `node-${d.id}`,
-				'r': 5
-			}).style('fill', d => {
-				if (d.data.highlight) return '#FFC10E'
-				else if (d.children) return 'transparent'
-				else return acclab_colors(d.depth)
-			})
-		.merge(circle)
-
-		circle.transition()
-			.duration(3000)
-			.attr('r', d => d.r || 5)
-
-		const leaf = node.filter(d => !d.children)
-		let sdg_text = leaf.selectAll('text.sdg')
-			.data(d => [d])
-		sdg_text.exit().remove()
-
-		sdg_text = sdg_text.enter()
-			.append('text')
-			.attrs({ 
-				'class': 'sdg',
-				'x': 0,
-				'y': 0 //(d, i, nodes) => (i - nodes.length / 2 - 0.5) * 14
-			}).styles({
-				'pointer-events': 'none',
-				'font-size': '24px',
-				'fill': '#FFF'
-			}).text(d => d.data.orid)
-
-		let leaf_text = leaf.selectAll('text.leaf-label')
-			.data(d => [d])
-		leaf_text.exit().remove()
-
-		leaf_text = leaf_text.enter()
-			.append('text')
-			.attrs({ 
-				'class': 'leaf-label hide',
-				'x': 0,
-				'y': (d, i, nodes) => (i - nodes.length / 2 - 0.5) * 14
-			}).styles({
-				'pointer-events': 'none'
-			}).text(d => d.id.substring(d.id.lastIndexOf('.') + 1).split(/(?=[A-Z][^A-Z])/g))
-
-		let group_text = svg.selectAll('text.group-label')
-			.data(root.descendants().filter(d => d.depth === max_depth - 1), d => `label-${d.id}`)
-		group_text.exit().remove()
-
-		group_text = group_text.enter()
-			.append('text')
-			.attrs({ 
-				'class': 'group-label',
-				'x': 0,
-				'transform': d => `translate(${d.x || 0},${d.y || 0})`,
-			}).style('opacity', 0)
-			.merge(group_text)
-		
-		group_text.transition()
-			.delay(_ => 2000 + Math.random() * 1000)
-			.duration(_ => Math.random() * 1000)
-			.attr('transform', d => `translate(${d.x || 0},${d.y || 0})`)
-			.style('opacity', 1)
-
-		let text_lines = group_text.selectAll('tspan')
-			.data(d => {
-				if (d.children?.length === 1) return []
-				else return d.id.substring(d.id.lastIndexOf('.') + 1).split(/(?=[A-Z][^A-Z])/g)[0].split('-')
-			})
-		text_lines.exit().remove()
-
-		text_lines = text_lines.enter()
-			.append('tspan')
-			.attrs({ 
-				'x': 0,
-				'y': (d, i, nodes) => 13 + (i - nodes.length / 2 - 0.5) * 16,
-			}).text(d => d)
-		.merge(text_lines)
-
-		// function hovered(hover) {
-		// 	return function(d) {
-		// 		d3.selectAll(d.ancestors().map(function(d) { return d.node; })).classed('node--hover', hover);
-		// 	};
-		// }
-
-		d3.selectAll('.group-label').moveToFront()
+			// <image href="mdn_logo_only_color.png" height="200" width="200" />
+			node.addElems('text', 'hide')
+				.attrs({ 
+					'x': d => nodeScale(d.count) + 5, 
+					'alignment-baseline': 'middle' 
+				})
+				.styles({ 'font-size': '.75rem', 'fill': '#333', 'pointer-events': 'none' })
+				.text(d => d.id)
+			node.insertElems('text', 'rect', 'hide')
+				.attrs({ 
+					'width': 0, 
+					'height': 20, 
+					'y': -10, 
+					'x': d => nodeScale(d.count) 
+				}).styles({ 
+					'fill': '#FFF', 
+					'fill-opacity': .9, 
+					'pointer-events': 'none' 
+				})
+		}
 	}
 
 	function drawTimeSeries (data) {
@@ -885,5 +963,19 @@
 			filters.style.overflow = 'visible'
 		}
 	}
+	Array.prototype.shuffle = function () {
+	  let currentIndex = this.length;
+	  let temporaryValue;
+	  let randomIndex;
+
+	  while (0 !== currentIndex) {
+	    randomIndex = Math.floor(Math.random() * currentIndex);
+	    currentIndex -= 1;
+	    temporaryValue = this[currentIndex];
+	    this[currentIndex] = this[randomIndex];
+	    this[randomIndex] = temporaryValue;
+	  }
+	  return this;
+	};
 </script>
 </body>
