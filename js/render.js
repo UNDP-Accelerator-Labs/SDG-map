@@ -312,7 +312,7 @@ function displaySnippets (kwargs) {
 	const { id, title, data, timeseries } = kwargs
 	const container = d3.select('.right-col')
 	.style('flex', '1 1 0')
-	container.select('button.expand-filters').toggleClass('close')
+	container.select('button.expand-filters').classed('close', true)
 
 	const panel = container.addElems('div', 'inner')
 
@@ -324,6 +324,8 @@ function displaySnippets (kwargs) {
 
 	const pad = panel.addElems('article', 'pad', data)
 	.on('mouseover', function (d) {
+		// TO DO: EDIT THIS
+		/*
 		const tags = d.tags.filter(c => c.type === 'thematic_areas')
 		const tag_ids = tags.map(c => c.tag_id)
 		// DIM ALL NODES THAT ARE NOT IN THE PAD
@@ -338,9 +340,11 @@ function displaySnippets (kwargs) {
 		.classed('hide', c => c.data.orid.intersection(tag_ids).length === 0)
 
 		drawPortfolio(tag_ids)
+		*/
 
 	}).on('mouseout', _ => {
 		// UNDIM ALL NODES
+		/* 
 		d3.selectAll('g.node--leaf circle')
 		.classed('dimmed', false)
 
@@ -351,6 +355,7 @@ function displaySnippets (kwargs) {
 		.classed('hide', true)
 
 		d3.selectAll('path.portfolio').remove()
+		*/
 	}).addElems('div', 'inner')
 
 	const head = pad.addElems('hgroup', 'head')
@@ -379,28 +384,32 @@ function displaySnippets (kwargs) {
 			d3.selectAll('svg g.node').filter(c => c.id === d.key).dispatch('click')
 		})
 		.on('mouseover', d => {
-			d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
-			.attrs({
-				'data-color': function () { return d3.select(this).style('fill') },
-				'data-opacity': function () { return d3.select(this).style('fill-opacity') }
-			}).styles({
-				'fill': c => sdgcolors[c.id - 1],
-				'fill-opacity': 1,
-			})
+			if (d.key !== id) {
+				d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
+				.attrs({
+					'data-color': function () { return d3.select(this).style('fill') },
+					'data-opacity': function () { return d3.select(this).style('fill-opacity') }
+				}).styles({
+					'fill': c => sdgcolors[c.id - 1],
+					'fill-opacity': .75,
+				});
+			}
 		}).on('mouseout', d => {
-			d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
-			.each(function (c) {
-				const sel = d3.select(this);
-				const { color, opacity } = this.dataset;
+			if (d.key !== id) {
+				d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
+				.each(function (c) {
+					const sel = d3.select(this);
+					const { color, opacity } = this.dataset;
 
-				sel.styles({
-					'fill': color,
-					'fill-opacity': opacity,
-				}).attrs({
-					'data-color': null, // RESET
-					'data-opacity': null, // RESET
-				})
-			})
+					sel.styles({
+						'fill': color,
+						'fill-opacity': opacity,
+					}).attrs({
+						'data-color': null, // RESET
+						'data-opacity': null, // RESET
+					});
+				});
+			}
 		})
 		.addElems('img')
 			.attr('src', d => `imgs/sdgs/G${d.key}-l.svg`)
@@ -445,7 +454,7 @@ function drawTimeSeries (data) {
 export function clearPanel () {
 	const container = d3.select('.right-col')
 	.style('flex', '0 1 0')
-	container.select('button.expand-filters').toggleClass('close')
+	container.select('button.expand-filters').classed('close', false)
 	container.selectAll('.inner').remove()
 
 	// RESET THE BUNDLE
