@@ -1,67 +1,5 @@
-Array.prototype.chunk = function (size) {
-	const groups = [];
-	for (let i = 0; i < this.length; i += size) {
-		groups.push(this.slice(i, i + size));
-	}
-	return groups;
-};
-function chunk (arr, size) {
-	const groups = [];
-	for (let i = 0; i < arr.length; i += size) {
-		groups.push(arr.slice(i, i + size));
-	}
-	return groups;
-};
-Array.prototype.unique = function (key, onkey) {
-	const arr = []
-	this.forEach(d => {
-		if (!key) {
-			if (arr.indexOf(d) === -1) arr.push(d)
-		}
-		else {
-			if (onkey) { if (arr.map(c => c).indexOf(d[key]) === -1) arr.push(d[key]) }
-			else { 
-				if (typeof key === 'function') { if (arr.map(c => key(c)).indexOf(key(d)) === -1) arr.push(d) }
-				else { if (arr.map(c => c[key]).indexOf(d[key]) === -1) arr.push(d) }
-			}
-		}
-	})
-	return arr
-}
-Array.prototype.nest = function (key, keep) {
-	const arr = []
-	this.forEach(d => {
-		const groupby = typeof key === 'function' ? key(d) : d[key]
-		if (!arr.find(c => c.key === groupby)) {
-			if (keep) {
-				const obj = {}
-				obj.key = groupby
-				obj.values = [d]
-				obj.count = 1
-				if (Array.isArray(keep)) keep.forEach(k => obj[k] = d[k])
-				else obj[keep] = d[keep]
-				arr.push(obj)
-			} else arr.push({ key: groupby, values: [d], count: 1 })
-		} else { 
-			arr.find(c => c.key === groupby).values.push(d)
-			arr.find(c => c.key === groupby).count ++
-		}
-	})
-	return arr
-}
-
-d3.selection.prototype.moveToFront = function() {
-	return this.each(function(){
-		this.parentNode.appendChild(this)
-	})
-}
-d3.selection.prototype.findAncestor = function (_target) {
-	if (!this.node().classList || this.node().nodeName === 'BODY') return null
-	if (this.classed(_target) || this.node().nodeName === _target?.toUpperCase()) return this
-	return d3.select(this.node().parentNode)?.findAncestor(_target);
-}
 const jsonQueryHeader = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-function POST (_uri, _q, _expectJSON = true) {
+export function POST (_uri, _q, _expectJSON = true) {
 	return new Promise(resolve => 
 		fetch(_uri, { method: 'POST', headers: jsonQueryHeader, body: JSON.stringify(_q) })
 			.then(response => {
@@ -72,7 +10,7 @@ function POST (_uri, _q, _expectJSON = true) {
 			.catch(err => { if (err) throw (err) })
 	)
 }
-function GET (_uri, _expectJSON = true) {
+export function GET (_uri, _expectJSON = true) {
 	return new Promise(async resolve => {
 		fetch(_uri, { method: 'GET', headers: jsonQueryHeader })
 			.then(response => {
@@ -83,32 +21,102 @@ function GET (_uri, _expectJSON = true) {
 			.catch(err => { if (err) throw (err) })
 	})
 }
-Array.prototype.intersection = function (V2) {
-	const intersection = []
-	this.sort()
-	V2.sort()
-	for (let i = 0; i < this.length; i += 1) {
-		if(V2.indexOf(this[i]) !== -1){
-			intersection.push(this[i])
-		}
-	}
-	return intersection
-}
-String.prototype.simplify = function () {
-	return this.valueOf().trim().replace(/[^\w\s]/gi, '').replace(/\s/g, '').toLowerCase()
-}
 
-Array.prototype.shuffle = function () {
-  let currentIndex = this.length;
-  let temporaryValue;
-  let randomIndex;
+export const simplifyStr = function (st) {
+	if (!str) return undefined;
+	else return str.trim().replace(/[^\w\s]/gi, '').replace(/\s/g, '').toLowerCase();
+}
+export const platform = new URL('https://learningplans.sdg-innovation-commons.org')
+export const colors = {
+	'dark-blue': '#005687',
+	'mid-blue': '#0468B1',
+	'mid-blue-semi': 'rgba(4,104,177,.75)',
+	'light-blue': '#32BEE1',
 
-  while (0 !== currentIndex) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-    temporaryValue = this[currentIndex];
-    this[currentIndex] = this[randomIndex];
-    this[randomIndex] = temporaryValue;
-  }
-  return this;
+	'dark-red': '#A51E41',
+	'mid-red': '#FA1C26',
+	'light-red': '#F03C8C',
+
+	'dark-green': '#418246',
+	'mid-green': '#61B233',
+	'light-green': '#B4DC28',
+
+	'dark-yellow': '#FA7814',
+	'mid-yellow': '#FFC10E',
+	'light-yellow': '#FFF32A',
+
+	'dark-grey': '#000000',
+	'mid-grey': '#646464',
+	'light-grey': '#969696',
+
+	'light-2': '#e5e5e5',
 };
+export const sdgcolors = [
+	'#E5233B', // 1
+	'#DDA839', // 2
+	'#4D9F39', // 3
+	'#C5182D', // 4
+	'#FF3B21', // 5
+	'#25BDE2', // 6
+	'#FCC30C', // 7
+	'#A21842', // 8
+	'#FD6924', // 9
+	'#DD1267', // 10
+	'#FD9D25', // 11
+	'#BE8B2F', // 12
+	'#3F7E44', // 13
+	'#0C97D9', // 14
+	'#56C02A', // 15
+	'#02689D', // 16
+	'#18486A', // 17
+];
+export const polarToCartesian = function (angle, length, offset) {
+	if (!offset) offset = [0, 0];
+	const x = Math.cos(angle) * length + offset[0];
+	const y = Math.sin(angle) * length + offset[1];
+	return [x, y];
+};
+export const getCoordinates = function (angle, distance, width, height) {
+	angle = angle * Math.PI / 180 - Math.PI / 2
+	const length = Math.min(width, height) * distance
+	const offset = [ width / 2, height / 2 ]
+	return polarToCartesian(angle, length, offset)
+};
+export const chunk = function (arr, size) {
+	const groups = [];
+	for (let i = 0; i < arr.length; i += size) {
+		groups.push(arr.slice(i, i + size));
+	}
+	return groups;
+};
+export function sortpolygon (points, type) {
+	if (!points.length) return points
+	const unique = []
+	points.forEach(d => {
+		if (!unique.map(c => c.join('-')).includes(d.join('-'))) unique.push(d)
+	})
+
+	// INSPIRED BY https://stackoverflow.com/questions/14263284/create-non-intersecting-polygon-passing-through-all-given-points
+	// FIND THE LEFT MOST POINT p AND TH RIGHT MOST POINT q
+	const p = unique.sort((a, b) => a[0] - b[0])[0]
+	const q = unique.sort((a, b) => b[0] - a[0])[0]
+	// CONSIDERING THE FUNCTIONS THAT DEFINE THE pq SEGMENT IS
+	// a * x + b
+	const a = (p[1] - q[1]) / (p[0] - q[0])
+	const b = p[1] - a * p[0]
+	// FIND THE GROUP A OF POINTS ABOVE pq
+	// A POINT (x, y) IS ABOVE pq IF y > ax + b
+	// SEE https://math.stackexchange.com/questions/324589/detecting-whether-a-point-is-above-or-below-a-slope
+	const A = unique.filter(d => d[1] > a * d[0] + b)
+	A.sort((a, b) => a[0] - b[0])
+	// AND THE GROUPP B OF POINTS BELOW pq
+	const B = unique.filter(d => d[1] <= a * d[0] + b && ![p.join('-'), q.join('-')].includes(d.join('-')))
+	B.sort((a, b) => b[0] - a[0])
+
+	let sorted = [p]
+	sorted = sorted.concat(A)
+	sorted.push(q)
+	sorted = sorted.concat(B)
+
+	return sorted
+}

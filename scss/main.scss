@@ -22,7 +22,6 @@ $c-light-grey: #969696;
 $c-light-2: #E5E5E5;
 $c-light-3: #F3F3F3;
 
-
 $t-xxsmall: 8px;
 $t-xsmall: 10px;
 $t-small: 12px;
@@ -146,29 +145,6 @@ body {
 						stroke-width: 2;
 					}
 				}
-				.node:not(.node--root):not(.node--leaf):hover,
-				.node:not(.node--root):not(.node--leaf).hover {
-					circle:not(.highlight) {
-						stroke: $c-light-grey;
-						stroke-dasharray: 1px 2px;
-					}
-				}
-				.node--root {
-					fill: #FFF;
-					fill-opacity: .75;
-				}
-				.node--leaf {
-					circle {
-						transition: opacity .25s;
-
-						&.dimmed {
-							opacity: .3;
-						}
-					}
-					}
-				circle.connected {
-					fill: green !important;
-				}
 			}
 			#get-data {
 				position: absolute;
@@ -254,6 +230,28 @@ body {
 								padding: 0 5px;
 								border: 1px solid #FFF;
 								border-radius: 5px;
+							}
+							.img-tag {
+								display: inline-block;
+								width: 40px;
+								height: 40px;
+								border-radius: 40px;
+								margin: 0 5px 5px 0;
+
+								img {
+									width: 20px;
+									height: 20px;
+									margin: 10px 0 0 10px;
+								}
+
+								&:not(.main) {
+									width: 30px;
+									height: 30px;
+
+									img {
+										margin: 5px 0 0 5px;
+									}
+								}
 							}
 						}
 					}
