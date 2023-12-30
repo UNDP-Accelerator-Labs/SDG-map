@@ -1,6 +1,6 @@
 import './Array.prototype.extensions.js'
 import { GET, platform } from './main.js'
-import { bundle, addLoader, rmLoader, clearPanel } from './render.js'
+import { bundle, matrix, addLoader, rmLoader, clearPanel } from './render.js'
 
 function DOMLoad () {
 	const { clientWidth: cw, clientHeight: ch, offsetWidth: ow, offsetHeight: oh } = d3.select('.left-col').node()
@@ -8,6 +8,8 @@ function DOMLoad () {
 	const height = width
 	const padding = 60
 	const edit_layout = false
+
+	let display = 'bundle'
 
 	const svg = d3.select('svg#bubbles')
 	.attrs({ 
@@ -33,6 +35,7 @@ function DOMLoad () {
 		if (['countries'].includes(k)) basetags_params.append(k, v)
 		if (['regions'].includes(k)) basetags_params.append(k, v)
 		if (['mobilizations'].includes(k)) basetags_params.append(k, v) //mobilization = v
+		if (k === 'display' && v === 'matrix') display = 'matrix'
 	})
 	if (!basetags_params.has('mobilizations')) basetags_params.append('mobilizations', mobilization)
 
@@ -113,7 +116,8 @@ function DOMLoad () {
 		})
 		console.log(links)
 
-		bundle({ nodes, links, pads, svg, width, height, padding })
+		if (display === 'matrix') matrix({ nodes, links, pads, svg, width, height, padding })
+		else bundle({ nodes, links, pads, svg, width, height, padding })
 		rmLoader()
 
 	}).catch(err => console.log(err))

@@ -128,6 +128,181 @@ export function bundle (kwargs) {
 	// annotate(pads)
 }
 
+export function matrix (kwargs) {
+	const { nodes, links, pads, svg, width, height, padding } = kwargs
+	const cellsize = Math.min(width * .8, height * .8) / (nodes.length + 1)
+
+	nodes.sort((a, b) => a.id - b.id)
+
+	const nodeScale = d3.scaleLinear()
+		.domain(d3.extent(nodes, d => d.count))
+		.range([cellsize * .5, cellsize * 3])
+	const edgeScale = d3.scaleLinear()
+		.domain(d3.extent(links, d => d.count))
+		.range([0, 1])
+
+	const g = svg.styles({
+		'width': `calc(100% - ${padding}px)`,
+		'height': `calc(100% - ${padding}px)`,
+	}).select('g')
+		.attr('transform', `translate(${[ (width - cellsize * (nodes.length + 1)) / 2, (height - cellsize * (nodes.length + 1)) / 2 ]})`)
+
+	const column_headers = g.addElems('g', 'column-header', nodes)
+		.attr('transform', (d, i) => `translate(${[i * cellsize, -cellsize]})`)
+	column_headers.addElems('rect', 'head')
+		.attrs({
+			'width': cellsize,
+			'height': cellsize,
+		}).style('fill', d => sdgcolors[d.id - 1])
+	column_headers.addElems('image')
+		.attrs({
+			'href': d => `imgs/sdgs/G${d.id}-l.svg`,
+			'width': cellsize * .8,
+			'height': cellsize * .8,
+			'x': cellsize * .1,
+			'y': cellsize * .1,
+		});
+
+	const row_headers = g.addElems('g', 'row-header', nodes)
+		.attr('transform', (d, i) => `translate(${[-cellsize, i * cellsize]})`)
+	row_headers.addElems('rect', 'head')
+		.attrs({
+			'width': cellsize,
+			'height': cellsize,
+		}).style('fill', d => sdgcolors[d.id - 1])
+	row_headers.addElems('image')
+		.attrs({
+			'href': d => `imgs/sdgs/G${d.id}-l.svg`,
+			'width': cellsize * .8,
+			'height': cellsize * .8,
+			'x': cellsize * .1,
+			'y': cellsize * .1,
+		});
+
+	g.addElems('g', 'row', nodes)
+		.attr('transform', (d, i) => `translate(${[0, i * cellsize]})`)
+	.addElems('rect', 'cell', d => {
+		return nodes.map(c => {
+			const obj = Object.assign({}, c)
+			obj.adjacent = d.id
+			obj.count = links.find(b => (b.source === d.id && b.target === c.id) || (b.source === c.id && b.target === d.id))?.count ?? 0
+			return obj
+		})
+	}).attrs({
+		'width': cellsize,
+		'height': cellsize,
+		'x': (d, i) => i * cellsize
+	}).styles({
+		'fill': colors['dark-blue'],
+		'fill-opacity': d => edgeScale(d.count),
+	}).on('mouseover', function (d, i) {
+		const col = g.selectAll('.column-header')
+			.filter(c => c.id === d.id)
+		col.select('rect.head')
+		.transition()
+		.duration(250)
+		.attrs({
+			'height': cellsize * 2,
+			'y': -cellsize,
+		});
+		col.select('image')
+		.transition()
+		.duration(250)
+		.attr('y', -cellsize + cellsize * .1)
+
+		const row = g.selectAll('.row-header')
+			.filter(c => c.id === d.adjacent)
+		row.select('rect.head')
+		.transition()
+		.duration(250)
+		.attrs({
+			'width': cellsize * 2,
+			'x': -cellsize,
+		})
+		row.select('image')
+		.transition()
+		.duration(250)
+		.attr('x', -cellsize + cellsize * .1)
+
+		// DISPLAY COUNT
+		const associated_pads = pads.flat().filter(c => {
+			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+		})
+
+		if (d.id !== d.adjacent) {
+			d3.select(this.parentNode)
+			.addElems('text', 'count')
+			.attrs({
+				'x': i * cellsize + cellsize / 2,
+				'y': cellsize / 2,
+				'dy': '.3em'
+			}).text(associated_pads.length)
+		}
+
+	}).on('mouseout', function (d) {
+		const col = g.selectAll('.column-header')
+			.filter(c => c.id === d.id)
+		col.select('rect.head')
+		.transition()
+		.duration(250)
+		.attrs({
+			'height': cellsize,
+			'y': 0,
+		})
+
+		col.select('image')
+		.transition()
+		.duration(250)
+		.attr('y', cellsize * .1)
+
+		const row = g.selectAll('.row-header')
+			.filter(c => c.id === d.adjacent)
+		row.select('rect.head')
+		.transition()
+		.duration(250)
+		.attrs({
+			'width': cellsize,
+			'x': 0,
+		})
+
+		row.select('image')
+		.transition()
+		.duration(250)
+		.attr('x', cellsize * .1)
+
+		d3.selectAll('text.count').remove()
+	}).on('click', function (d) {
+		d3.selectAll('rect.cell').style('stroke', 'none')
+		d3.select(this).moveToFront()
+		.styles({
+			'stroke': colors['mid-yellow'],
+			'stroke-width': 3
+		});
+		d3.select(this.parentNode).moveToFront();
+
+		// DISPLAY THE PAD SNIPPETS
+		const associated_pads = pads.flat().filter(c => {
+			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+		})
+		const id = [d.id, d.adjacent]
+		id.sort((a, b) => a - b)
+		const title = id.map(c => {
+			return associated_pads.map(b => b.tags.filter(a => a.key === c)).flat().unique('key')[0].name
+		}).join(' x ')
+
+		displaySnippets({ id, title: `SDGs ${id.join(' x ')}: ${title}`, data: associated_pads });
+	});
+
+	// ADD MARGINALS
+	g.addElems('g', 'marginal', nodes)
+		.attr('transform', (d, i) => `translate(${[cellsize * nodes.length, i * cellsize]})`)
+	.addElems('rect')
+		.attrs({
+			'width': d => nodeScale(d.count),
+			'height': cellsize,
+		}).style('fill', d => sdgcolors[d.id - 1]);
+}
+
 function annotate (pads) {
 	const txtvars = { fontsize: 10, dy: 1.4 }
 	const titlevars = { fontsize: 18, dy: 1.3 }
@@ -309,7 +484,8 @@ function renderMenu (regions, countries, tags) {
 }
 
 function displaySnippets (kwargs) {
-	const { id, title, data, timeseries } = kwargs
+	let { id, title, data, timeseries } = kwargs
+	if (!Array.isArray(id)) id = [id]
 	const container = d3.select('.right-col')
 	.style('flex', '1 1 0')
 	container.select('button.expand-filters').classed('close', true)
@@ -317,8 +493,16 @@ function displaySnippets (kwargs) {
 	const panel = container.addElems('div', 'inner')
 
 	panel.addElems('h1', 'category', title ? [title] : [])
-		// .style('color', sdgcolors[id - 1])
 		.html(d => d)
+
+
+	// DISPLAY STATS
+	const stats = panel.addElems('div', 'stats')
+	.addElems('div', 'stat', [ { key: 'Action learning plans', value: data.length }, { key: 'Countries', value: data.unique('country', true).length } ])
+	.addElems('h1')
+	.html(d => {
+		return `${d.value}<br><small>${d.key}</small>`
+	})
 
 	// drawTimeSeries(timeseries)
 
@@ -376,15 +560,14 @@ function displaySnippets (kwargs) {
 			if (month < 10) month = `0${month}`
 			return `${year}-${month}`
 		})
-	head.addElems('div', 'tags', d => [d.tags.filter(c => c.type === 'sdgs').sort((a, b) => a.key === id ? -1 : b.key == id ? 1 : 0)])
+	head.addElems('div', 'tags', d => [d.tags.filter(c => c.type === 'sdgs').sort((a, b) => id.includes(a.key) && id.includes(b.key) ? a.key - b.key : id.includes(a.key) ? -1 : id.includes(b.key) ? 1 : 0)])
 		.addElems('div', 'img-tag', d => d)
-			.classed('main', d => d.key === id)
+			.classed('main', d => id.includes(d.key))
 			.style('background-color', d => sdgcolors[d.key - 1])
 		.on('click', d => {
 			d3.selectAll('svg g.node').filter(c => c.id === d.key).dispatch('click')
-		})
-		.on('mouseover', d => {
-			if (d.key !== id) {
+		}).on('mouseover', d => {
+			if (!id.includes(d.key)) {
 				d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
 				.attrs({
 					'data-color': function () { return d3.select(this).style('fill') },
@@ -395,7 +578,7 @@ function displaySnippets (kwargs) {
 				});
 			}
 		}).on('mouseout', d => {
-			if (d.key !== id) {
+			if (!id.includes(d.key)) {
 				d3.selectAll('svg g.node circle.color').filter(c => c.id === d.key)
 				.each(function (c) {
 					const sel = d3.select(this);
@@ -469,6 +652,10 @@ export function clearPanel () {
 		'stroke': colors['light-grey'],
 		'stroke-opacity': .5,
 	})
+
+	// RESET THE MATRIX
+	svg.selectAll('rect.cell')
+	.style('stroke', 'none')
 }
 
 function drawPortfolio (data) {

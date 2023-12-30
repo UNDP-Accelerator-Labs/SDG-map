@@ -105,6 +105,13 @@ body div.container .left-col svg .node:not(.node--root) .highlight {
   stroke: #FA7814;
   stroke-width: 2;
 }
+body div.container .left-col svg text.count {
+  font-size: 16px;
+  font-weight: bold;
+}
+body div.container .left-col svg rect.cell {
+  cursor: pointer;
+}
 body div.container .left-col #get-data {
   position: absolute;
   width: 100%;
@@ -140,6 +147,27 @@ body div.container .right-col h1 {
 body div.container .right-col svg .timeseries {
   fill: none;
   stroke: #32BEE1;
+}
+body div.container .right-col .stats {
+  display: grid;
+  grid-column-gap: 2em;
+  grid-template-columns: repeat(2, 1fr);
+}
+body div.container .right-col .stats .stat {
+  text-align: center;
+}
+body div.container .right-col .stats .stat h1 {
+  margin-top: 0;
+  margin-bottom: 0;
+  text-decoration: none;
+  color: #FFF;
+  font-size: 60px;
+  line-height: 1em;
+}
+body div.container .right-col .stats .stat h1 small {
+  font-size: 20px;
+  font-weight: normal;
+  line-height: 1.3em;
 }
 body div.container .right-col article {
   margin: 4em 0;
@@ -189,11 +217,13 @@ body div.container .right-col article .inner hgroup .tags .img-tag {
   height: 40px;
   border-radius: 40px;
   margin: 0 5px 5px 0;
+  cursor: pointer;
 }
 body div.container .right-col article .inner hgroup .tags .img-tag img {
   width: 20px;
   height: 20px;
   margin: 10px 0 0 10px;
+  cursor: pointer;
 }
 body div.container .right-col article .inner hgroup .tags .img-tag:not(.main) {
   width: 30px;
