@@ -2,11 +2,14 @@ import './d3.prototype.extensions.js'
 import './Array.prototype.extensions.js'
 import { platform, getCoordinates, sdgcolors, colors, chunk } from './main.js'
 
+export const txtvars = { fontsize: 12, dy: 1.3 }
+export const titlevars = { fontsize: 18, dy: 1.3 }
+
 export function bundle (kwargs) {
 	const { nodes, links, pads, svg, width, height, padding } = kwargs
 
 	const nodeScale = d3.scaleLinear()
-		.domain(d3.extent(nodes, d => d.count))
+		.domain(d3.extent(nodes.filter(d => d.count > 0), d => d.count))
 		.range([30, 60])
 	const linkScale = d3.scaleLinear()
 		.domain(d3.extent(links, d => d.count))
@@ -47,6 +50,7 @@ export function bundle (kwargs) {
 		})
 
 	const node = g.addElems('g', 'node', nodes.sort((a, b) => a.id - b.id))
+		.classed('hide', d => d.count === 0)
 		.attr('transform', `translate(${[ width / 2, height / 2 ]})`)
 	.on('click', function (d) {
 		const sel = d3.select(this).moveToFront();
@@ -95,12 +99,12 @@ export function bundle (kwargs) {
 	});
 	node.addElems('circle', 'blank')
 		.attrs({ 
-			'r': d => nodeScale(d.count)
+			'r': d => d.r = nodeScale(d.count)
 		})
 		.style('fill', '#FFF');
 	node.addElems('circle', 'color')
 		.attrs({ 
-			'r': d => nodeScale(d.count), 
+			'r': d => d.r = nodeScale(d.count), 
 			'title': d => d.id
 		})
 		.style('fill', d => {
@@ -121,11 +125,76 @@ export function bundle (kwargs) {
 		.delay((d, i) => i * 10)
 		.attr('transform', d => {
 			const angle = 360 * (d.id - 1) / nodes.length
-			const pos = getCoordinates(angle, .3, width, height)
-			return `translate(${pos})`
+			d.pos = getCoordinates(angle, .3, width, height)
+			return `translate(${d.pos})`
 		})
 
+	const sdg_ids = g.addElems('g', 'sdg-id', nodes.sort((a, b) => a.id - b.id))
+		.attr('transform', d => {
+			const angle = 360 * (d.id - 1) / nodes.length
+			const pos = getCoordinates(angle, .3, width, height, nodeScale(d.count) + 15)
+			return `translate(${pos})`
+		}).styles({
+			'text-anchor': d => {
+				const angle = 360 * (d.id - 1) / nodes.length
+				if (angle > 180) return 'end'
+				else return 'start'
+			}, 'fill': d => sdgcolors[d.id - 1],
+		}).addElems('text')
+		.text(d => d.id)
+
 	// annotate(pads)
+}
+
+export function bundleLegend (kwargs) {
+	const { nodes, svg, width, height, padding } = kwargs
+	const range = [30, 60]
+	// LEGEND
+	const legend = svg.select('g').addElems('g', 'legend')
+		.attr('transform', `translate(${[ width, height - padding * 2 ]})`)
+	const circles = legend.addElems('circle', 'scales', range)
+	.attrs({
+		'r': 0,
+		'cx': (d, i) => {
+			if (i === 0) return -d - 10
+			else return d + 10
+		}
+	}).styles({
+		'stroke': colors['light-grey'],
+		'stroke-dasharray': '2 2',
+		'fill': 'none',
+	})
+	circles.transition('animate-circle-in')
+	.duration(1000)
+	.delay((d, i) => i * 250)
+	.attr('r', d => d)
+	
+	legend.addElems('text', 'extremum', d3.extent(nodes.filter(d => d.count > 0), d => d.count).zip(range))
+	.attrs({
+		'x': (d, i) => {
+			if (i === 0) return -d[1] - 10
+			else return d[1] + 10
+		},
+		'font-size': txtvars.fontsize,
+		'dy': txtvars.fontsize * .3,
+	}).text(d => d[0])
+	
+	const line = legend.addElems('line', null, [range])
+	.attrs({
+		'x1': d => -d[0] - 10,
+		'y1': 0,
+		'x2': d => -d[0] - 10,
+		'y2': 0,
+	}).styles({
+		'stroke': colors['light-grey'],
+		'stroke-dasharray': '2 2',
+		'fill': 'none',
+	})
+	line.transition('animate-line-in')
+	.duration(500)
+	.attr('x2', d => d[1] + 10)
+
+	return legend
 }
 
 export function matrix (kwargs) {
@@ -136,7 +205,7 @@ export function matrix (kwargs) {
 
 	const nodeScale = d3.scaleLinear()
 		.domain(d3.extent(nodes, d => d.count))
-		.range([cellsize * .5, cellsize * 3])
+		.range([cellsize * .75, cellsize * 3])
 	const edgeScale = d3.scaleLinear()
 		.domain(d3.extent(links, d => d.count))
 		.range([0, 1])
@@ -149,6 +218,16 @@ export function matrix (kwargs) {
 
 	const column_headers = g.addElems('g', 'column-header', nodes)
 		.attr('transform', (d, i) => `translate(${[i * cellsize, -cellsize]})`)
+	column_headers.addElems('text')
+		.attrs({
+			'x': cellsize / 2,
+			'y': -cellsize / 2,
+			'dy': '.3em',
+		}).styles({
+			'font-size': txtvars.fontsize,
+			'text-anchor': 'middle',
+			'fill': d => sdgcolors[d.id - 1],
+		}).text(d => d.id)
 	column_headers.addElems('rect', 'head')
 		.attrs({
 			'width': cellsize,
@@ -165,6 +244,16 @@ export function matrix (kwargs) {
 
 	const row_headers = g.addElems('g', 'row-header', nodes)
 		.attr('transform', (d, i) => `translate(${[-cellsize, i * cellsize]})`)
+	row_headers.addElems('text')
+		.attrs({
+			'x': -cellsize / 2,
+			'y': cellsize / 2,
+			'dy': '.3em',
+		}).styles({
+			'font-size': txtvars.fontsize,
+			'text-anchor': 'middle',
+			'fill': d => sdgcolors[d.id - 1],
+		}).text(d => d.id)
 	row_headers.addElems('rect', 'head')
 		.attrs({
 			'width': cellsize,
@@ -179,21 +268,24 @@ export function matrix (kwargs) {
 			'y': cellsize * .1,
 		});
 
-	g.addElems('g', 'row', nodes)
+	const cells = g.addElems('g', 'row', nodes)
 		.attr('transform', (d, i) => `translate(${[0, i * cellsize]})`)
-	.addElems('rect', 'cell', d => {
+	.addElems('g', 'cell', d => {
 		return nodes.map(c => {
 			const obj = Object.assign({}, c)
 			obj.adjacent = d.id
 			obj.count = links.find(b => (b.source === d.id && b.target === c.id) || (b.source === c.id && b.target === d.id))?.count ?? 0
 			return obj
 		})
-	}).attrs({
+	}).attr('transform', (d, i) => `translate(${[i * cellsize, 0]})`)
+
+	cells.addElems('rect', 'cell')
+	.attrs({
 		'width': cellsize,
 		'height': cellsize,
-		'x': (d, i) => i * cellsize
-	}).styles({
-		'fill': colors['dark-blue'],
+	})
+	.styles({
+		'fill': colors['mid-grey'],
 		'fill-opacity': d => edgeScale(d.count),
 	}).on('mouseover', function (d, i) {
 		const col = g.selectAll('.column-header')
@@ -231,14 +323,13 @@ export function matrix (kwargs) {
 
 		if (d.id !== d.adjacent) {
 			d3.select(this.parentNode)
-			.addElems('text', 'count')
+			.addElems('text', 'count highlight')
 			.attrs({
 				'x': i * cellsize + cellsize / 2,
 				'y': cellsize / 2,
 				'dy': '.3em'
 			}).text(associated_pads.length)
 		}
-
 	}).on('mouseout', function (d) {
 		const col = g.selectAll('.column-header')
 			.filter(c => c.id === d.id)
@@ -270,7 +361,7 @@ export function matrix (kwargs) {
 		.duration(250)
 		.attr('x', cellsize * .1)
 
-		d3.selectAll('text.count').remove()
+		d3.selectAll('.cell text.count.highlight').remove()
 	}).on('click', function (d) {
 		d3.selectAll('rect.cell').style('stroke', 'none')
 		d3.select(this).moveToFront()
@@ -293,50 +384,196 @@ export function matrix (kwargs) {
 		displaySnippets({ id, title: `SDGs ${id.join(' x ')}: ${title}`, data: associated_pads });
 	});
 
+	cells.addElems('text', 'count', d => {
+		// DISPLAY COUNT
+		const associated_pads = pads.flat().filter(c => {
+			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+		}).length
+
+		if (d.id !== d.adjacent) return [associated_pads]
+		else return []
+	}).attrs({
+		'x': (d, i) => i * cellsize + cellsize / 2,
+		'y': cellsize / 2,
+		'dy': '.3em'
+	}).styles({
+		'fill': '#FFF'
+	})
+	.text(d => d)
+
 	// ADD MARGINALS
-	g.addElems('g', 'marginal', nodes)
+	const marginals = g.addElems('g', 'marginal', nodes)
 		.attr('transform', (d, i) => `translate(${[cellsize * nodes.length, i * cellsize]})`)
-	.addElems('rect')
+	marginals.addElems('rect')
 		.attrs({
 			'width': d => nodeScale(d.count),
 			'height': cellsize,
 		}).style('fill', d => sdgcolors[d.id - 1]);
+	marginals.addElems('text', 'count')
+		.attrs({
+			'x': d => nodeScale(d.count) - 7.5,
+			'y': cellsize / 2,
+			'dy': '.3em'
+		}).styles({
+			'font-size': txtvars.fontsize,
+			'text-anchor': 'end',
+			'fill': '#FFF',
+		}).html(d => d.count)
+
 }
 
-function annotate (pads) {
-	const txtvars = { fontsize: 10, dy: 1.4 }
-	const titlevars = { fontsize: 18, dy: 1.3 }
+export function annotate (kwargs) {
+	let { title, description, width, height, pos } = kwargs
 
-	const snippet = g.addElems('g', 'snippet', _ => {
-		return nodes.filter(d => [1, 5, 8, 11, 13, 17].includes(d.id))
-		.map(d => {
-			const pad = pads.flat().shuffle()
-			.find(c => {
-				return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.snippet && c.vignette && !c.title.includes('…')
-			})
+	const annotation = d3.select('svg > g').addElems('g', 'annotation', _ => {
+		let tlines = []
+		if (title) {
+			title = title.split(/[\s\n]/g)
+			tlines = chunk(title, 3)
+		}
 
-			const title = pad.title.split(' ')
-			const tlines = chunk(title, 3)
+		let lines = []
+		if (description) {
+			description = description.split(/[\s\n]/g)
+			lines = chunk(description, 5)
+		}
 
-			const snippet = pad.snippet.split(' ')
-			let lines = chunk(snippet, 5)
-			if (lines.length > 5) {
-				lines = lines.slice(0, 5)
-				lines.push(['...'])
-			}
-
-			const angle = (360 * d.id / nodes.length) // TO DO: DOES THIS NEED TO BE d.id - 1?
-			let anchor = 'start'
-			if (angle > 180) anchor = 'end'
-			const p_angle = 360 * (d.id - 1) / nodes.length
-			let pos = getCoordinates(p_angle, .4, width, height)
-			if (angle < 90 || angle > 270) {
-				pos[1] -= (txtvars.fontsize * txtvars.dy * (lines.length + .5)) + (titlevars.fontsize * titlevars.dy * tlines.length)
-			}
-			return { id: d.id, pad, pos, anchor, lines, tlines }
-		})
+		const anchor = 'start'
+		if (!pos) pos = [width / 2, height / 2]
+		return [{ tlines, lines, anchor, pos }]
 	}).attr('transform', d => `translate(${d.pos})`)
-	snippet.addElems('text', 'title')
+
+	const titlespan = annotation.addElems('text', 'title')
+		.addElems('tspan', null, d => {
+			return d.tlines.map(c => {
+				return { line: c, anchor: d.anchor }
+			})
+		}).attrs({
+			'x': 0,
+			'dy': titlevars.fontsize * titlevars.dy,
+		}).styles({
+			'font-size': `${titlevars.fontsize}px`,
+			'font-weight': 'bold',
+			'text-anchor': d => d.anchor,
+			'fill': colors['mid-grey'],
+		})
+		.text(d => d.line.join(' '))
+	const textspan = annotation.addElems('text', 'description')
+		.attr('transform', d => {
+			if (d.tlines?.length) {	
+				return `translate(0, ${d.tlines.length * titlevars.fontsize * titlevars.dy + txtvars.fontsize * txtvars.dy * .5})`
+			} else {
+				return `translate(0, ${-txtvars.fontsize * txtvars.dy})`
+			}
+		}).addElems('tspan', null, d => {
+			return d.lines.map(c => {
+				return { line: c, anchor: d.anchor }
+			})
+		}).attrs({
+			'x': 0,
+			'dy': txtvars.fontsize * txtvars.dy,
+		}).styles({
+			'text-anchor': d => d.anchor,
+			'fill': colors['mid-grey'],
+			'opacity': 0,
+		}).text(d =>  d.line.join(' '))
+	textspan.transition()
+		.duration(500)
+		.delay((d, i) => 250 + i * 10)
+		.style('opacity', 1)
+
+	return annotation
+}
+
+export function annotateBundle (kwargs) {
+	let { id, title, description, width, height } = kwargs
+
+	const g = d3.select('svg > g')
+	const nodes = g.selectAll('g.node')
+	const highlightnode = nodes.filter(d => d.id === id).select('circle.color')
+	const highlight_r = +highlightnode.attr('r') + 10
+	const or_angle = 360 * (id - 1) / nodes.size()
+	const or_pos = getCoordinates(or_angle, .3, width, height)
+	const or_padding = getCoordinates(or_angle, .3, width, height, highlight_r)
+
+	const annotation = g.addElems('g', 'annotation', _ => {
+		let tlines = []
+		if (title) {
+			title = title.split(/[\s\n]/g)
+			tlines = chunk(title, 3)
+		}
+
+		let lines = []
+		if (description) {
+			description = description.split(/[\s\n]/g)
+			lines = chunk(description, 5)
+			// if (lines.length > 5) {
+			// 	lines = lines.slice(0, 5)
+			// 	lines.push(['...'])
+			// }
+		}
+
+		const angle = (360 * id / nodes.size()) // TO DO: DOES THIS NEED TO BE id - 1?
+		let anchor = 'start'
+		if (angle > 180) anchor = 'end'
+		const p_angle = 360 * (id - 1) / nodes.size()
+		let linepos = getCoordinates(p_angle, .4, width, height, -10)
+		let pos = getCoordinates(p_angle, .4, width, height)
+		if (angle < 90 || angle > 270) {
+			linepos[1] -= (txtvars.fontsize * txtvars.dy * (lines.length + .5)) + (titlevars.fontsize * titlevars.dy * tlines.length)
+			pos[1] -= (txtvars.fontsize * txtvars.dy * (lines.length + .5)) + (titlevars.fontsize * titlevars.dy * tlines.length)
+		}
+		return [{ id, pos, linepos, anchor, lines, tlines }]
+	}).attr('transform', d => `translate(${d.pos})`)
+	const circle = annotation.addElems('circle')
+		.attrs({
+			'cx': d => -(d.pos[0] - or_pos[0]),
+			'cy': d => -(d.pos[1] - or_pos[1]),
+			'r': 0,
+		}).styles({
+			'stroke': colors['mid-yellow'],
+			'stroke-width': 2,
+			'fill': 'none',
+		})
+	circle.transition()
+		.ease(d3.easeElasticOut.amplitude(1).period(0.3))
+		.duration(1000)
+		.attr('r', +highlightnode.attr('r') + 10)
+	// THE FOLLOWING IS THE CLIP PATH FOR THE LINE
+	const clipPath = annotation.addElems('mask')
+		.attr('id', 'clip')
+	clipPath.addElem('circle')
+		.attrs({
+			'cx': d => -(d.pos[0] - or_pos[0]),
+			'cy': d => -(d.pos[1] - or_pos[1]),
+			'r': +highlightnode.attr('r') + 100,
+		}).style('fill', '#FFF')
+	clipPath.addElem('circle')
+		.attrs({
+			'cx': d => -(d.pos[0] - or_pos[0]),
+			'cy': d => -(d.pos[1] - or_pos[1]),
+			'r': +highlightnode.attr('r') + 10,
+		}).style('fill', '#000')
+	const line = annotation.addElems('line')
+		.attrs({
+			'x1': d => -(d.pos[0] - or_pos[0]),
+			'y1': d => -(d.pos[1] - or_pos[1]),
+			'x2': d => -(d.pos[0] - or_pos[0]),
+			'y2': d => -(d.pos[1] - or_pos[1]),
+			'mask': 'url(#clip)',
+		}).styles({
+			'stroke': colors['mid-yellow'],
+			'stroke-width': 2,
+			'fill': 'none',
+		})
+	line.transition()
+		.duration(500)
+		.attrs({
+			'x2': d => d.linepos[0] - d.pos[0],
+			'y2': d => d.linepos[1] - d.pos[1],
+		})
+
+	const titlespan = annotation.addElems('text', 'title')
 		.addElems('tspan', null, d => {
 			return d.tlines.map(c => {
 				return { line: c, anchor: d.anchor, id: d.id }
@@ -351,25 +588,39 @@ function annotate (pads) {
 			'fill': d => sdgcolors[d.id - 1]
 		})
 		.text(d => d.line.join(' '))
-	snippet.addElems('text', 'description')
-		.attr('transform', d => `translate(0, ${d.tlines.length * titlevars.fontsize * titlevars.dy + txtvars.fontsize * txtvars.dy * .5})`)
-		.addElems('tspan', null, d => {
+	const textspan = annotation.addElems('text', 'description')
+		.attr('transform', d => {
+			if (d.tlines?.length) {	
+				return `translate(0, ${d.tlines.length * titlevars.fontsize * titlevars.dy + txtvars.fontsize * txtvars.dy * .5})`
+			} else {
+				return `translate(0, ${-txtvars.fontsize * txtvars.dy})`
+			}
+		}).addElems('tspan', null, d => {
 			return d.lines.map(c => {
 				return { line: c, anchor: d.anchor }
 			})
 		}).attrs({
 			'x': 0,
 			'dy': txtvars.fontsize * txtvars.dy,
-		}).style('text-anchor', d => d.anchor)
-		.text(d =>  d.line.join(' '))
+		}).styles({
+			'text-anchor': d => d.anchor,
+			'fill': colors['mid-grey'],
+			'opacity': 0,
+		}).text(d =>  d.line.join(' '))
+	textspan.transition()
+		.duration(500)
+		.delay((d, i) => 250 + i * 10)
+		.style('opacity', 1)
 }
 
-function renderMenu (regions, countries, tags) {
+export function renderMenu (kwargs) {
+	let { regions, countries, tags } = kwargs
 	// ADD THE mobilizations VALUES FOR NOW AS WE DO NOT ENABLE SELECTION YET
 	const cartouche = d3.select('.cartouche')
 	const form = cartouche.select('form')
 
-	form.addElems('input', 'mobilizations', basetags_params.getAll('mobilizations'))
+	const base_params = new URLSearchParams(window.location.search)
+	form.addElems('input', 'mobilizations', base_params.getAll('mobilizations'))
 		.attrs({
 			'type': 'hidden',
 			'name': 'mobilizations',
@@ -377,79 +628,70 @@ function renderMenu (regions, countries, tags) {
 		})
 
 	// ADD THE DROPDOWNS
-	regions.sort((a, b) => a.undp_region.localeCompare(b.undp_region))
-	countries = countries.filter(d => {
-		if (basetags_params.getAll('regions').length) return d.has_lab && basetags_params.getAll('regions').includes(d.undp_region)
-		else return d.has_lab
-	})
-
-	tags.sort((a, b) => a.name?.localeCompare(b.name))
-	
 	// FOR FILTERING
-	const regions_menu = cartouche.select('menu.f-regions')
-	.addElems('li', 'region', regions)
+	if (regions?.length) {
+		regions.sort((a, b) => a.undp_region.localeCompare(b.undp_region))
+
+		const regions_menu = cartouche.select('menu.f-regions')
+		.addElems('li', 'region', regions)
 	
-	regions_menu.addElems('input')
-		.attrs({
-			'type': 'checkbox',
-			'value': d => d.undp_region,
-			'id': d => d.undp_region,
-			'name': 'regions',
-			'checked': d => basetags_params.getAll('regions').includes(d.undp_region) || null
+		regions_menu.addElems('input')
+			.attrs({
+				'type': 'checkbox',
+				'value': d => d.undp_region,
+				'id': d => d.undp_region,
+				'name': 'regions',
+				'checked': d => base_params.getAll('regions').includes(d.undp_region) || null
+			})
+		regions_menu.addElems('label')
+			.attr('for', d => d.undp_region)
+		.html(d => `${d.undp_region_name} (${d.undp_region})`)
+	} else cartouche.select('menu.f-regions')
+
+	if (countries?.length) {
+		countries = countries.filter(d => {
+			if (base_params.getAll('regions').length) return d.has_lab && base_params.getAll('regions').includes(d.undp_region)
+			else return d.has_lab
 		})
-	regions_menu.addElems('label')
-		.attr('for', d => d.undp_region)
-	.html(d => `${d.undp_region_name} (${d.undp_region})`)
 
-	const countries_menu = cartouche.select('menu.f-countries')
-	.addElems('li', 'country', countries)
-	
-	countries_menu.addElems('input')
-		.attrs({
-			'type': 'checkbox',
-			'value': d => d.iso3,
-			'id': d => d.iso3,
-			'name': 'countries',
-			'checked': d => basetags_params.getAll('countries').includes(d.iso3) || null
+		const countries_menu = cartouche.select('menu.f-countries')
+		.addElems('li', 'country', countries)
+		
+		countries_menu.addElems('input')
+			.attrs({
+				'type': 'checkbox',
+				'value': d => d.iso3,
+				'id': d => d.iso3,
+				'name': 'countries',
+				'checked': d => base_params.getAll('countries').includes(d.iso3) || null
+			})
+		countries_menu.addElems('label')
+			.attr('for', d => d.iso3)
+		.html(d => `${d.country}`)
+	} else cartouche.select('menu.f-countries').remove()
+
+	if (tags?.length) {
+		tags.sort((a, b) => a.name?.localeCompare(b.name))
+
+		const tags_hmenu = cartouche.select('menu.h-tags')
+		.addElems('li', 'tag', tags)
+		
+		tags_hmenu.addElems('input')
+			.attrs({
+				'type': 'checkbox',
+				'value': d => simplifyStr(d.name),
+				'id': d => simplifyStr(d.name),
+				'name': 'h-tags',
+				'checked': d => highlighttags_params.getAll('h-tag').includes(simplifyStr(d.name)) || null
+			})
+		.on('change', function (d) {
+			toggleHighlight(d.name, this.checked)
 		})
-	countries_menu.addElems('label')
-		.attr('for', d => d.iso3)
-	.html(d => `${d.country}`)
 
-	// FOR HIGHLIGHTING
-	// const countries_hmenu = cartouche.select('menu.h-countries')
-	// .addElems('li', 'country', countries)
-	
-	// countries_hmenu.addElems('input')
-	// 	.attrs({
-	// 		'type': 'checkbox',
-	// 		'value': d => d.iso3,
-	// 		'id': d => `h-${d.iso3}`,
-	// 		'name': 'countries',
-	// 		'checked': d => highlighttags_params.getAll('h-countries').includes(d.iso3) || null
-	// 	})
-	// countries_hmenu.addElems('label')
-	// 	.attr('for', d => `h-${d.iso3}`)
-	// .html(d => `${d.country}`)
-
-	const tags_hmenu = cartouche.select('menu.h-tags')
-	.addElems('li', 'tag', tags)
-	
-	tags_hmenu.addElems('input')
-		.attrs({
-			'type': 'checkbox',
-			'value': d => simplifyStr(d.name),
-			'id': d => simplifyStr(d.name),
-			'name': 'h-tags',
-			'checked': d => highlighttags_params.getAll('h-tag').includes(simplifyStr(d.name)) || null
-		})
-	.on('change', function (d) {
-		toggleHighlight(d.name, this.checked)
-	})
-
-	tags_hmenu.addElems('label')
-		.attr('for', d => simplifyStr(d.name))
-	.html(d => d.name)
+		tags_hmenu.addElems('label')
+			.attr('for', d => simplifyStr(d.name))
+		.html(d => d.name)
+	} else cartouche.select('menu.h-tags').remove()
 
 	// INTERACTIVITY
 	cartouche.selectAll('.filter input[type=text]')
@@ -494,7 +736,6 @@ function displaySnippets (kwargs) {
 
 	panel.addElems('h1', 'category', title ? [title] : [])
 		.html(d => d)
-
 
 	// DISPLAY STATS
 	const stats = panel.addElems('div', 'stats')
@@ -685,7 +926,7 @@ export const addLoader = function () {
 export const rmLoader = function () {
 	d3.select('.lds-default').remove()
 }
-function expandfilters (node) {
+export function expandFilters (node) {
 	d3.select(node).toggleClass('close')
 	const cartouche = d3.select(node).findAncestor('cartouche')
 	const filters = cartouche.select('form').node()

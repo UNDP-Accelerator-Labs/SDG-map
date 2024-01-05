@@ -76,9 +76,10 @@ export const polarToCartesian = function (angle, length, offset) {
 	const y = Math.sin(angle) * length + offset[1];
 	return [x, y];
 };
-export const getCoordinates = function (angle, distance, width, height) {
+export const getCoordinates = function (angle, distance, width, height, abspadding) {
+	if (!abspadding) abspadding = 0
 	angle = angle * Math.PI / 180 - Math.PI / 2
-	const length = Math.min(width, height) * distance
+	const length = Math.min(width, height) * distance + abspadding
 	const offset = [ width / 2, height / 2 ]
 	return polarToCartesian(angle, length, offset)
 };

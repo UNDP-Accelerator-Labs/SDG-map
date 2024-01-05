@@ -2,3 +2,4 @@
 tokens
 *.sublime-*
 statics/
+local.*

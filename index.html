@@ -15,28 +15,47 @@
 
 <body id='packs'>
 
+<main>
 
-<div class='container'>
+<header>
+	<nav id='languages'></nav>
+	<div id='logo'>
+		<img src='imgs/branding/UNDP_accelerator_labs_logo_vertical_color_RGB.png'>
+		<h1>Action Learning <span class='light'>Browser</span></h1>
+		<h2 class='subtitle'></h2>
+	</div>
+
+	<script type='text/javascript'>
+		function fixLabel (node) {
+			d3.select(node).classed('has-value', node.value?.trim().length)
+		}
+	</script>
+</header>
+
+<section>
+	<h1 class='main-title'>
+		<small>UNDP Accelerator Labs</small><br>
+		Action Learning<br>
+		<span class='light'>Browser</span>
+	</h1>
+	<h2 class='subtitle'></h2>
+
+	<a class='navigation hide' href='#browse'><button>Skip introduction</button></a>
+</section>
+
+<section class='hide'>
+	<p class='lead'>The UNDP Accelerator Labs use an action learning approach to development. Action learning is a lean and continuous process that consists of <i>doing</i> and <i>reflecting</i>. It brings together small groups of relevant stakeholders to work on real problems, taking action and learning individually and collectively. The purpose of using this approach inside UNDP is to help the organizations develop creative, flexible, and successful strategies to pressing development challenges.
+	Action learning is cyclical. At the beginning of each cycle, Accelerator Labs share a brief description of what they are working on with the rest of the network; and at the end of each cycle, they share their most important learnings. The aim is to facilitate network learning from the different lab experiences.</p>
+	<p class='lead'>This site presents a summary of the latest action learning activities of the UNDP Accelerator Labs Network, organized by relevant Sustainable Development Goals (SDGs).</p>
+</section>
+
+<div class='container intro hide' data-prevstate='hidden' data-step=1>
 	<div class='left-col'>
-		<header>
-			<nav id='languages'></nav>
-			<div id='logo'>
-				<img src='imgs/branding/UNDP_accelerator_labs_logo_vertical_color_RGB.png'>
-				<h1>Action Learning Plans</h1>
-				<h2>SDG Browser</h2>
-			</div>
-
-			<script type='text/javascript'>
-				function fixLabel (node) {
-					d3.select(node).classed('has-value', node.value?.trim().length)
-				}
-			</script>
-		</header>
-		<svg id='bubbles'>
+		<svg id='main-vis'>
 			<g></g>
 		</svg>
 		<div class='cartouche'>
-			<button type='button' class='expand-filters' onclick='expandfilters(this)'>
+			<button type='button' class='expand-filters'>
 				<div class='line l1'></div><div class='line l2'></div><div class='line l3'></div>
 			</button>
 			<form method='GET'>
@@ -59,15 +78,7 @@
 						</div>
 					</div>
 				</section>
-				<section>
-					<!-- <div class='filter countries'>
-						<input type='text' id='h-countries' onblur='fixLabel(this)'>
-						<label for='h-countries'>Highlight countries</label>
-						<div class='dropdown'>
-							<menu class='h-countries'>
-							</menu>
-						</div>
-					</div> -->
+				<!-- <section>
 					<div class='filter tags'>
 						<input type='text' id='h-tags' onblur='fixLabel(this)'>
 						<label for='h-regions'>Highlight tags</label>
@@ -76,7 +87,7 @@
 							</menu>
 						</div>
 					</div>
-				</section>
+				</section> -->
 				<button type='submit' class='submit-filters'>Apply filters</button>
 			</form>
 		</div>
@@ -88,6 +99,30 @@
 		</button>
 	</div>
 </div>
+
+<section class='hide'>
+	<p class='bg'>All of the work the UNDP Accelerator Labs engage in aims to learn about different approaches to achieving the Sustainable Development Goals (SDGs). Each action learning cycle focuses on one or several interconnected SDGs.</p>
+</section>
+<section class='hide'>
+	<h2 class='bg'>Understanding the graphic</h2>
+</section>
+<section class='intro hide' data-prevstate='hidden' data-step=2></section>
+<section class='intro hide' data-prevstate='hidden' data-step=3></section>
+<section class='intro hide' data-prevstate='hidden' data-step=4></section>
+<section class='hide'>
+	<h2 class='bg'>Interacting with the graphic</h2>
+</section>
+<section class='intro hide' data-prevstate='hidden' data-step=5></section>
+<section class='intro hide' data-prevstate='hidden' data-step=6></section>
+<section class='intro hide' data-prevstate='hidden' data-step=7></section>
+<section class='intro hide' data-prevstate='hidden' data-step=8></section>
+<section class='intro hide' data-prevstate='hidden' data-step=9></section>
+<section class='hide'>
+	<h2 class='bg'>Your turn to explore...</h2>
+</section>
+<section class='xh2 hide' id='browse'></section>
+
+</main>
 
 <footer>
 	<div class='footer-row'>

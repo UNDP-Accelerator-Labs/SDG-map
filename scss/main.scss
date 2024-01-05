@@ -50,9 +50,12 @@ body {
 	line-height: 1.35em;
 
 	header {
+		position: sticky;
+		top: 0;
 		flex: 0 1 0;
 		display: block;
 		width: 100%;
+		z-index: 1000;
 		
 		#languages {
 			height: 30px;
@@ -69,6 +72,7 @@ body {
 			position: absolute;
 			top: 30px;
 			left: 0;
+			pointer-events: none;
 			
 			img {
 				height: 125px;
@@ -79,12 +83,17 @@ body {
 				line-height: 1.2em;
 				word-spacing: 100vw;
 				color: $c-dark-blue;
+
+				.light {
+					color: $c-mid-blue;
+					font-weight: normal;
+				}
 			}
 			h2 {
 				margin: 0 0 0 105px;
 				line-height: 1.3em;
 				word-spacing: 100vw;
-				color: $c-mid-blue;
+				color: $c-mid-green;
 				font-weight: normal;
 			}
 		}
@@ -108,11 +117,73 @@ body {
 		}*/
 	}
 
+	main {
+		section {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			flex-direction: column;
+			align-items: center;
+			min-height: 100vh;
+			max-width: 800px;
+			margin: 0 auto;
+			box-sizing: border-box;
+			pointer-events: none;
+
+			&.xh2 {
+				min-height: 200vh;
+			}
+
+			* {
+				pointer-events: all;
+			}
+
+			.bg {
+				display: block;
+				padding: 30px 60px;
+				background-color: #FFF;
+				border: 1px dotted $c-light-grey;
+			}
+			h1 {
+				text-align: center;
+				font-size: $t-xlarge;
+				line-height: 1.3em;
+				color: $c-dark-blue;
+
+				small {
+					font-size: $t-mid;
+					line-height: 1.3em;
+				}
+			}
+			h2 {
+				text-align: center;
+				font-size: $t-large;
+				font-weight: normal;
+				line-height: 1.3em;
+				color: $c-mid-green;
+				margin: .3em 0 2em 0;
+			}
+			.light {
+				font-weight: normal;
+				color: $c-mid-blue;
+			}
+			p {
+				margin-bottom: 1em;
+
+				&.lead {
+					font-size: $t-mid;
+					line-height: 1.3em;
+				}
+			}
+		}
+	}
 
 	div.container {
+		position: sticky;
+		top: 30px;
 		display: flex;
 		width: 100%;
-		height: 100%;
+		height: calc(100% - 30px);
 
 		.left-col {
 			flex: 1 1 0;
@@ -129,7 +200,7 @@ body {
 					font-family: 'Noto Sans', Helvetica, Arial, sans-serif;
 					font-size: $t-small;
 					text-anchor: middle;
-					text-transform: capitalize;
+/*					text-transform: capitalize;*/
 					pointer-events: none;
 				}
 				text.group-label {
@@ -151,6 +222,17 @@ body {
 				}
 				rect.cell {
 					cursor: pointer;
+				}
+				.marginal {
+					text.count {
+						font-weight: normal;
+					}
+				}
+
+				.sdg-id {
+					text {
+						font-weight: bold;
+					}
 				}
 			}
 			#get-data {
@@ -318,8 +400,11 @@ form {
 	overflow: hidden;
 
 	section {
+		display: block !important;
 		flex: 1 1;
 		padding: 15px 15px 0 15px;
+		min-height: initial !important;
+		max-width: unset !important;
 
 		&:nth-child(even) {
 			padding-left: 0;
@@ -444,6 +529,15 @@ form {
 		box-sizing: border-box;
 	}
 }
+
+@keyframes animnate_circle_in {
+	from {
+		transform: scale(0);
+	}
+	to {
+		transform: scale(1);
+	}
+}
 button.expand-filters {
 	position: relative;
 	vertical-align: middle;
@@ -455,6 +549,18 @@ button.expand-filters {
 	outline: none;
 	border: none;
 	cursor: pointer;
+
+	&.highlight::after {
+		content: '';
+		position: absolute;
+		top: -7.5px;
+		left: -7.5px;
+		width: 40px;
+		height: 40px;
+		border: 2px solid $c-mid-yellow;
+		border-radius: 40px;
+		animation: animate_circle_in 1s;
+	}
 
 	.line {
 		position: absolute;
@@ -500,5 +606,18 @@ button.expand-filters {
 				transform-origin: center;
 			}
 		}
+	}
+}
+a.navigation {
+	button {
+		min-height: 45px;
+		padding: 0 15px;
+		border: none;
+		outline: none;
+		background-color: $c-light-blue;
+		color: #FFF;
+		font-size: $t-mid;
+		line-height: 1.5em;
+		cursor: pointer;
 	}
 }

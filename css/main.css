@@ -18,9 +18,12 @@ body {
   line-height: 1.35em;
 }
 body header {
+  position: sticky;
+  top: 0;
   flex: 0 1 0;
   display: block;
   width: 100%;
+  z-index: 1000;
 }
 body header #languages {
   height: 30px;
@@ -35,6 +38,7 @@ body header #logo {
   position: absolute;
   top: 30px;
   left: 0;
+  pointer-events: none;
 }
 body header #logo img {
   height: 125px;
@@ -46,11 +50,15 @@ body header #logo h1 {
   word-spacing: 100vw;
   color: #005687;
 }
+body header #logo h1 .light {
+  color: #0468B1;
+  font-weight: normal;
+}
 body header #logo h2 {
   margin: 0 0 0 105px;
   line-height: 1.3em;
   word-spacing: 100vw;
-  color: #0468B1;
+  color: #61B233;
   font-weight: normal;
 }
 body .cartouche {
@@ -70,10 +78,65 @@ body .cartouche {
   	left: 30px;
   }*/
 }
+body main section {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+body main section.xh2 {
+  min-height: 200vh;
+}
+body main section * {
+  pointer-events: all;
+}
+body main section .bg {
+  display: block;
+  padding: 30px 60px;
+  background-color: #FFF;
+  border: 1px dotted #969696;
+}
+body main section h1 {
+  text-align: center;
+  font-size: 36px;
+  line-height: 1.3em;
+  color: #005687;
+}
+body main section h1 small {
+  font-size: 20px;
+  line-height: 1.3em;
+}
+body main section h2 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: normal;
+  line-height: 1.3em;
+  color: #61B233;
+  margin: 0.3em 0 2em 0;
+}
+body main section .light {
+  font-weight: normal;
+  color: #0468B1;
+}
+body main section p {
+  margin-bottom: 1em;
+}
+body main section p.lead {
+  font-size: 20px;
+  line-height: 1.3em;
+}
 body div.container {
+  position: sticky;
+  top: 30px;
   display: flex;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 30px);
 }
 body div.container .left-col {
   flex: 1 1 0;
@@ -90,7 +153,7 @@ body div.container .left-col svg text {
   font-family: "Noto Sans", Helvetica, Arial, sans-serif;
   font-size: 12px;
   text-anchor: middle;
-  text-transform: capitalize;
+  /*					text-transform: capitalize;*/
   pointer-events: none;
 }
 body div.container .left-col svg text.group-label {
@@ -111,6 +174,12 @@ body div.container .left-col svg text.count {
 }
 body div.container .left-col svg rect.cell {
   cursor: pointer;
+}
+body div.container .left-col svg .marginal text.count {
+  font-weight: normal;
+}
+body div.container .left-col svg .sdg-id text {
+  font-weight: bold;
 }
 body div.container .left-col #get-data {
   position: absolute;
@@ -253,8 +322,11 @@ form {
   overflow: hidden;
 }
 form section {
+  display: block !important;
   flex: 1 1;
   padding: 15px 15px 0 15px;
+  min-height: initial !important;
+  max-width: unset !important;
 }
 form section:nth-child(even) {
   padding-left: 0;
@@ -369,6 +441,14 @@ form button.submit-filters {
   box-sizing: border-box;
 }
 
+@keyframes animnate_circle_in {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
 button.expand-filters {
   position: relative;
   vertical-align: middle;
@@ -380,6 +460,17 @@ button.expand-filters {
   outline: none;
   border: none;
   cursor: pointer;
+}
+button.expand-filters.highlight::after {
+  content: "";
+  position: absolute;
+  top: -7.5px;
+  left: -7.5px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #FFC10E;
+  border-radius: 40px;
+  animation: animate_circle_in 1s;
 }
 button.expand-filters .line {
   position: absolute;
@@ -419,6 +510,18 @@ button.expand-filters.close .line.l3 {
   width: 25px;
   transform: translate(2.5px, 15px) rotate(45deg);
   transform-origin: center;
+}
+
+a.navigation button {
+  min-height: 45px;
+  padding: 0 15px;
+  border: none;
+  outline: none;
+  background-color: #32BEE1;
+  color: #FFF;
+  font-size: 20px;
+  line-height: 1.5em;
+  cursor: pointer;
 }
 
 /*# sourceMappingURL=main.css.map */
