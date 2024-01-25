@@ -850,7 +850,7 @@ function displaySnippets (kwargs) {
 		.attr('src', d => d.replace('https:/', 'https://'))
 	body.addElem('h2', 'source-title')
 		.html('Challenge statement')
-	body.addElems('p', 'snippet', (d) => {
+	body.addElems('p', 'source-snippet', (d) => {
 		return d.source.snippet?.toString()
 		.split('\n')
 		.filter((c) => c)
