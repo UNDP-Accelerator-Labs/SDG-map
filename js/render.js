@@ -1,5 +1,6 @@
 import './d3.prototype.extensions.js'
 import './Array.prototype.extensions.js'
+import './String.prototype.extensions.js'
 import { platform, getCoordinates, sdgcolors, colors, chunk } from './main.js'
 
 export const txtvars = { fontsize: 12, dy: 1.3 }
@@ -91,9 +92,15 @@ export function bundle (kwargs) {
 		})
 		// DISPLAY THE PAD SNIPPETS
 		const associated_pads = pads.flat().filter(c => {
-			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id)
+			let tags = c.tags
+			if (!tags.some(b => b.type === 'sdgs' && b.key === d.id) && c.source.tags.some(b => b.type === 'sdgs' && b.key === d.id)) tags = c.source.tags
+			return tags?.some(b => b.type === 'sdgs' && b.key === d.id)
 		})
-		const title = associated_pads.map(c => c.tags.filter(b => b.key === d.id)).flat().unique('key')[0].name
+		const title = associated_pads.map(c => {
+			let tags = c.tags
+			if (!tags.some(b => b.key === d.id) && c.source.tags.some(b => b.key === d.id)) tags = c.source.tags
+			return tags.filter(b => b.key === d.id)
+		}).flat().unique('key')[0].name
 
 		displaySnippets({ id: d.id, title: `SDG ${d.id}: ${title}`, data: associated_pads });
 	});
@@ -834,16 +841,31 @@ function displaySnippets (kwargs) {
 					});
 				});
 			}
-		})
-		.addElems('img')
+		}).addElems('img')
 			.attr('src', d => `imgs/sdgs/G${d.key}-l.svg`)
 		// .html(d => d.name?.length > 20 ? `${d.name?.slice(0, 20)}...` : d.name)
 
 	const body = pad.addElems('div', 'body')
-	body.addElems('img', 'vignette', d => d.media.slice(0, 1))
+	body.addElems('img', 'vignette', d => [d.vignette || d.source.vignette].filter(c => c))
 		.attr('src', d => d.replace('https:/', 'https://'))
-	body.addElems('p', 'snippet', d => [d.snippet])
-		.html(d => d)
+	body.addElem('h2', 'source-title')
+		.html('Challenge statement')
+	body.addElems('p', 'snippet', (d) => {
+		return d.source.snippet?.toString()
+		.split('\n')
+		.filter((c) => c)
+	}).html((d) => {
+		return d.URLsToLinks()
+	})
+	body.addElem('h2', 'source-title')
+		.html('Key learnings')
+	body.addElems('p', 'snippet', (d) => {
+		return d.snippet?.toString()
+		.split('\n')
+		.filter((c) => c)
+	}).html((d) => {
+		return d.URLsToLinks()
+	})
 }
 
 function drawTimeSeries (data) {

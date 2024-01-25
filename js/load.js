@@ -6,7 +6,7 @@ import { intro } from './intro.js'
 function DOMLoad () {
 	let display = 'bundle'
 	const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
-	let mobilization = 30
+	let mobilization = 32
 	
 	addLoader()
 	// LOAD PADS
@@ -17,6 +17,8 @@ function DOMLoad () {
 	// INCLUDE IMAGES AND TAGS
 	pads_queryparams.append('include_imgs', true)
 	pads_queryparams.append('include_tags', true)
+	pads_queryparams.append('include_source', true)
+	pads_queryparams.append('status', 2)
 	
 	// FILTER MOBILIZATIONS
 	// pads_queryparams.append('countries', 'json')
@@ -57,7 +59,6 @@ function DOMLoad () {
 		data_collection.push(GET(`${pads_path}?${pads_queryparams}`))
 		data_collection.push(GET(`${regions_path}?${regions_params}`))
 		data_collection.push(GET(`${countries_path}?${countries_params}`))
-		// data_collection.push(d3.json('data/taxonomy_manual_202311.json'))
 	}
 	
 	Promise.all(data_collection)
@@ -65,6 +66,8 @@ function DOMLoad () {
 	.then(results => {
 		const [ pads, regions, countries ] = results
 		countries_params.sort((a, b) => a.country.localeCompare(b.country))
+
+		console.log(pads)
 		
 		d3.selectAll('section, div.container, a.navigation').classed('hide', false)
 		// SET UP THE DISPLAY VARIABLES
@@ -87,7 +90,11 @@ function DOMLoad () {
 		else if (regions.length) subtitle.html(regions.filter(d => f_regions.includes(d.undp_region)).map(d => d.undp_region_name).join('\n'))
 
 		let nodes = pads.flat().map(d => {
-			const sdgs = d.tags?.filter(c => c.type === 'sdgs').map(c => { return { key: c.key, name: c.name } })
+			let tags = d.tags
+			console.log(d)
+			if (!tags.some(c => c.type === 'sdgs') && d.source.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
+			
+			const sdgs = tags?.filter(c => c.type === 'sdgs').map(c => { return { key: c.key, name: c.name } })
 			return sdgs.map(c => {
 				return { sdg: c.key, pad: d.pad_id, name: c.name }
 			})
@@ -103,11 +110,15 @@ function DOMLoad () {
 			nodes = nodes.concat(sdg_fill)
 			nodes.sort((a, b) => a.id - b.id)
 		}
+		console.log(nodes)
 
 		const links = []
 
 		pads.flat().forEach(d => {
-			const sdgs = d.tags?.filter(c => c.type === 'sdgs').map(c => c.key)
+			let tags = d.tags
+			if (!tags.some(c => c.type === 'sdgs') && d.source.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
+
+			const sdgs = tags?.filter(c => c.type === 'sdgs').map(c => c.key)
 			sdgs.forEach(c => {
 				const connections = sdgs.filter(b => b !== c)
 				connections.forEach(b => {

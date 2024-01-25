@@ -377,6 +377,16 @@ body {
 							max-width: 300px;
 							margin: 0 15px 15px 0;
 						}
+
+						h2 {
+							font-size: $t-mid;
+							color: $c-light-blue;
+							margin: .5em 0;
+							font-weight: normal;
+						}
+						p {
+							margin-bottom: .5em;
+						}
 					}
 				}
 			}

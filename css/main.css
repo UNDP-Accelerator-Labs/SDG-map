@@ -309,6 +309,15 @@ body div.container .right-col article .inner .body img {
   max-width: 300px;
   margin: 0 15px 15px 0;
 }
+body div.container .right-col article .inner .body h2 {
+  font-size: 20px;
+  color: #32BEE1;
+  margin: 0.5em 0;
+  font-weight: normal;
+}
+body div.container .right-col article .inner .body p {
+  margin-bottom: 0.5em;
+}
 
 form {
   width: 100%;
