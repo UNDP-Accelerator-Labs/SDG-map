@@ -92,7 +92,7 @@ function DOMLoad () {
 		let nodes = pads.flat().map(d => {
 			let tags = d.tags
 			console.log(d)
-			if (!tags.some(c => c.type === 'sdgs') && d.source.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
+			if (!tags.some(c => c.type === 'sdgs') && d.source?.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
 			
 			const sdgs = tags?.filter(c => c.type === 'sdgs').map(c => { return { key: c.key, name: c.name } })
 			return sdgs.map(c => {
@@ -116,7 +116,7 @@ function DOMLoad () {
 
 		pads.flat().forEach(d => {
 			let tags = d.tags
-			if (!tags.some(c => c.type === 'sdgs') && d.source.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
+			if (!tags.some(c => c.type === 'sdgs') && d.source?.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
 
 			const sdgs = tags?.filter(c => c.type === 'sdgs').map(c => c.key)
 			sdgs.forEach(c => {

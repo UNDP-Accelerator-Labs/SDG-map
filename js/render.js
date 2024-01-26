@@ -93,13 +93,13 @@ export function bundle (kwargs) {
 		// DISPLAY THE PAD SNIPPETS
 		const associated_pads = pads.flat().filter(c => {
 			let tags = c.tags
-			if (!tags.some(b => b.type === 'sdgs' && b.key === d.id) && c.source.tags.some(b => b.type === 'sdgs' && b.key === d.id)) tags = c.source.tags
+			if (!tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.id)) tags = c.source.tags
 			return tags?.some(b => b.type === 'sdgs' && b.key === d.id)
 		})
 		const title = associated_pads.map(c => {
 			let tags = c.tags
-			if (!tags.some(b => b.key === d.id) && c.source.tags.some(b => b.key === d.id)) tags = c.source.tags
-			return tags.filter(b => b.key === d.id)
+			if (!tags?.some(b => b.key === d.id) && c.source?.tags?.some(b => b.key === d.id)) tags = c.source.tags
+			return tags?.filter(b => b.key === d.id)
 		}).flat().unique('key')[0].name
 
 		displaySnippets({ id: d.id, title: `SDG ${d.id}: ${title}`, data: associated_pads });
@@ -325,7 +325,18 @@ export function matrix (kwargs) {
 
 		// DISPLAY COUNT
 		const associated_pads = pads.flat().filter(c => {
-			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			let tags = c.tags
+			if (!(tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				) && (
+				c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				)
+			) {
+				tags = c.source.tags
+			}
+			return tags?.some(b => b.type === 'sdgs' && b.key === d.id) && tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			// return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
 		})
 
 		if (d.id !== d.adjacent) {
@@ -380,12 +391,28 @@ export function matrix (kwargs) {
 
 		// DISPLAY THE PAD SNIPPETS
 		const associated_pads = pads.flat().filter(c => {
-			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			let tags = c.tags
+			if (!(tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				) && (
+				c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				)
+			) {
+				tags = c.source.tags
+			}
+			return tags?.some(b => b.type === 'sdgs' && b.key === d.id) && tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			// return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
 		})
 		const id = [d.id, d.adjacent]
 		id.sort((a, b) => a - b)
 		const title = id.map(c => {
-			return associated_pads.map(b => b.tags.filter(a => a.key === c)).flat().unique('key')[0].name
+			return associated_pads.map(b => {
+				let tags = b.tags
+				if (!tags?.some(a => a.key === c) && b.source?.tags?.some(a => a.key === c)) tags = b.source.tags
+				return tags?.filter(a => a.key === c)
+				// return b.tags.filter(a => a.key === c)
+			}).flat().unique('key')[0].name
 		}).join(' x ')
 
 		displaySnippets({ id, title: `SDGs ${id.join(' x ')}: ${title}`, data: associated_pads });
@@ -394,7 +421,18 @@ export function matrix (kwargs) {
 	cells.addElems('text', 'count', d => {
 		// DISPLAY COUNT
 		const associated_pads = pads.flat().filter(c => {
-			return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			let tags = c.tags
+			if (!(tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				) && (
+				c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.id) 
+				&& c.source?.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+				)
+			) {
+				tags = c.source.tags
+			}
+			return tags?.some(b => b.type === 'sdgs' && b.key === d.id) && tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
+			// return c.tags?.some(b => b.type === 'sdgs' && b.key === d.id) && c.tags?.some(b => b.type === 'sdgs' && b.key === d.adjacent)
 		}).length
 
 		if (d.id !== d.adjacent) return [associated_pads]
@@ -808,8 +846,12 @@ function displaySnippets (kwargs) {
 			if (month < 10) month = `0${month}`
 			return `${year}-${month}`
 		})
-	head.addElems('div', 'tags', d => [d.tags.filter(c => c.type === 'sdgs').sort((a, b) => id.includes(a.key) && id.includes(b.key) ? a.key - b.key : id.includes(a.key) ? -1 : id.includes(b.key) ? 1 : 0)])
-		.addElems('div', 'img-tag', d => d)
+	head.addElems('div', 'tags', d => {
+		let tags = d.tags
+		if (!d.tags?.some(c => c.type === 'sdgs') && d.source?.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
+		return [tags?.filter(c => c.type === 'sdgs').sort((a, b) => id.includes(a.key) && id.includes(b.key) ? a.key - b.key : id.includes(a.key) ? -1 : id.includes(b.key) ? 1 : 0)]
+		// return [d.tags.filter(c => c.type === 'sdgs').sort((a, b) => id.includes(a.key) && id.includes(b.key) ? a.key - b.key : id.includes(a.key) ? -1 : id.includes(b.key) ? 1 : 0)]
+	}).addElems('div', 'img-tag', d => d)
 			.classed('main', d => id.includes(d.key))
 			.style('background-color', d => sdgcolors[d.key - 1])
 		.on('click', d => {
