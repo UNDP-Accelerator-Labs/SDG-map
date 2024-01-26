@@ -900,7 +900,7 @@ function displaySnippets (kwargs) {
 		.split('\n')
 		.filter((c) => c)
 	}).html((d) => {
-		return d.URLsToLinks()
+		return d.URLsToLinks().trim()
 	})
 	body.addElem('h2', 'source-title')
 		.html('Key learnings')
@@ -909,7 +909,7 @@ function displaySnippets (kwargs) {
 		.split('\n')
 		.filter((c) => c)
 	}).html((d) => {
-		return d.URLsToLinks()
+		return d.URLsToLinks().trim()
 	})
 }
 
