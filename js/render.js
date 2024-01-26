@@ -848,6 +848,9 @@ function displaySnippets (kwargs) {
 	const body = pad.addElems('div', 'body')
 	body.addElems('img', 'vignette', d => [d.vignette || d.source.vignette].filter(c => c))
 		.attr('src', d => d.replace('https:/', 'https://'))
+		.on('error', function () {
+			d3.select(this).remove()
+		})
 	body.addElem('h2', 'source-title')
 		.html('Challenge statement')
 	body.addElems('p', 'source-snippet', (d) => {
