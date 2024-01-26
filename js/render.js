@@ -784,7 +784,7 @@ function displaySnippets (kwargs) {
 
 	// DISPLAY STATS
 	const stats = panel.addElems('div', 'stats')
-	.addElems('div', 'stat', [ { key: 'Action learning plans', value: data.length }, { key: 'Countries', value: data.unique('country', true).length } ])
+	.addElems('div', 'stat', [ { key: 'Action learning activities', value: data.length }, { key: 'Countries', value: data.unique('country', true).length } ])
 	.addElems('h1')
 	.html(d => {
 		return `${d.value}<br><small>${d.key}</small>`

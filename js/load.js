@@ -6,7 +6,7 @@ import { intro } from './intro.js'
 function DOMLoad () {
 	let display = 'bundle'
 	const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
-	let mobilization = 32
+	let mobilization = [32, 34]
 	
 	addLoader()
 	// LOAD PADS
@@ -36,7 +36,10 @@ function DOMLoad () {
 		if (['mobilizations'].includes(k)) pads_queryparams.append(k, v)
 		if (k === 'display' && v === 'matrix') display = 'matrix'
 	})
-	if (!pads_queryparams.has('mobilizations')) pads_queryparams.append('mobilizations', mobilization)
+	if (!pads_queryparams.has('mobilizations')) {
+		if (!Array.isArray(mobilization)) mobilization = [mobilization]
+		mobilization.forEach(d => pads_queryparams.append('mobilizations', d))
+	}
 
 	// LOAD FILTERS
 	// REGIONS
