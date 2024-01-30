@@ -834,7 +834,7 @@ function displaySnippets (kwargs) {
 		.addElems('a')
 	.attrs({
 		'href': d => {
-			if (d.source_pad_id) return new URL(`en/view/pad?id=${d.pad_id}&source=${d.source_pad_id}`, platform)
+			if (d.source_pad_id) return new URL(`en/view/pad?id=${d.pad_id}&source=${d.source_pad_id}&display=adjacent-source`, platform)
 			else return new URL(`en/view/pad?id=${d.pad_id}`, platform)
 		},
 		'target': '_blank'
