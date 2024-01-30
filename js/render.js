@@ -833,7 +833,10 @@ function displaySnippets (kwargs) {
 	head.addElems('h1', 'title')
 		.addElems('a')
 	.attrs({
-		'href': d => new URL(`en/view/pad?id=${d.pad_id}`, platform),
+		'href': d => {
+			if (d.source_pad_id) return new URL(`en/view/pad?id=${d.pad_id}&source=${d.source_pad_id}`, platform)
+			else return new URL(`en/view/pad?id=${d.pad_id}`, platform)
+		},
 		'target': '_blank'
 	}).html(d => d.title)
 	head.addElems('p', 'country')
