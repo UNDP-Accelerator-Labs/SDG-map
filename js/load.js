@@ -18,7 +18,7 @@ function DOMLoad () {
 	pads_queryparams.append('include_imgs', true)
 	pads_queryparams.append('include_tags', true)
 	pads_queryparams.append('include_source', true)
-	pads_queryparams.append('status', 2)
+	pads_queryparams.append('status', 3)
 	
 	// FILTER MOBILIZATIONS
 	// pads_queryparams.append('countries', 'json')
