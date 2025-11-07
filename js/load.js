@@ -6,7 +6,8 @@ import { intro } from './intro.js'
 function DOMLoad () {
 	let display = 'bundle'
 	const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
-	let mobilization = [32, 34]
+	// let mobilization = [32, 34] // 2023
+	let mobilization = [39,40,106] // 2024
 	
 	addLoader()
 	// LOAD PADS
@@ -18,6 +19,7 @@ function DOMLoad () {
 	pads_queryparams.append('include_imgs', true)
 	pads_queryparams.append('include_tags', true)
 	pads_queryparams.append('include_source', true)
+	pads_queryparams.append('status', 2)
 	pads_queryparams.append('status', 3)
 	
 	// FILTER MOBILIZATIONS
@@ -70,7 +72,7 @@ function DOMLoad () {
 		const [ pads, regions, countries ] = results
 		countries_params.sort((a, b) => a.country.localeCompare(b.country))
 
-		console.log(pads)
+		// console.log(pads)
 		
 		d3.selectAll('section, div.container, a.navigation').classed('hide', false)
 		// SET UP THE DISPLAY VARIABLES
