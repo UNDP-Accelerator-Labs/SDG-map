@@ -26,7 +26,8 @@ export const simplifyStr = function (st) {
 	if (!str) return undefined;
 	else return str.trim().replace(/[^\w\s]/gi, '').replace(/\s/g, '').toLowerCase();
 }
-export const platform = new URL('https://learningplans.sdg-innovation-commons.org')
+// export const platform = new URL('https://learningplans.sdg-innovation-commons.org')
+export const platform = new URL('https://www.sdg-innovation-commons.org')
 export const colors = {
 	'dark-blue': '#005687',
 	'mid-blue': '#0468B1',
