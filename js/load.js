@@ -1,17 +1,34 @@
 import './Array.prototype.extensions.js'
-import { GET, platform } from './main.js'
-import { bundle, matrix, addLoader, rmLoader, clearPanel, expandFilters, renderMenu } from './render.js'
+import { GET, platform, new_api } from './main.js'
+import { 
+	bundle, 
+	matrix,
+	addLoader,
+	rmLoader, 
+	clearPanel, 
+	expandFilters,
+	renderMenu 
+} from './render.js'
 import { intro } from './intro.js'
 
 function DOMLoad () {
-	let display = 'bundle'
-	const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
+	let display = 'bundle';
+	
+	let token = '';
+	if (new_api) token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwiZW1haWwiOiJqZXJlbXkuYm95QHVuZHAub3JnIiwibmFtZSI6IkplcmVteSBCb3kiLCJyaWdodHMiOjQsInR5cGUiOiJhcGlfYWNjZXNzIiwiaWF0IjoxNzY5NTE2MTI4LCJleHAiOjE4MDEwNTIxMjh9.-fmIBmGFZqmnqyE3yOe8wiKK10wrzYs5DT1jIWLqrS8'
+	else token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNDVlMThiYzMtODgwNS00NWUxLThjNTQtYjM1NmJjZWU0OTEyIiwicmlnaHRzIjozLCJpYXQiOjE2OTk3MDQwOTksImF1ZCI6InVzZXI6a25vd24iLCJpc3MiOiJzZGctaW5ub3ZhdGlvbi1jb21tb25zLm9yZyJ9.vKYu1PcT5Z672GUOuxO4ux_E6MTd2PT-GPBgXPgXbl8'
+	
+	let mobilization = [];
 	// let mobilization = [32, 34] // 2023
-	let mobilization = [39,40,106] // 2024
+	if (new_api) mobilization = [65, 79, 82, 67, 75, 76, 86, 87, 90, 92, 93];
+	else mobilization = [7,16,18,21,24,27,32,36,39,40,73,106];
 	
 	addLoader()
 	// LOAD PADS
-	const pads_path = new URL('apis/fetch/pads', platform)
+	let pads_path = '';
+	if (new_api) pads_path = new URL('api/pads', platform)
+	else pads_path = new URL('apis/fetch/pads', platform)
+	
 	const pads_queryparams = new URLSearchParams(pads_path.search)
 	pads_queryparams.append('output', 'json')
 	pads_queryparams.append('token', token)
@@ -45,35 +62,44 @@ function DOMLoad () {
 
 	// LOAD FILTERS
 	// REGIONS
-	const regions_path = new URL('apis/fetch/regions', platform)
+	let regions_path = '';
+	if (new_api) regions_path = new URL('api/regions', platform)
+	else regions_path = new URL('apis/fetch/regions', platform)
+	
 	const regions_params = new URLSearchParams(regions_path)
 	regions_params.append('token', token)
+	
 	// COUNTRIES
-	const countries_path = new URL('apis/fetch/countries', platform)
+	let countries_path = '';
+	if (new_api) countries_path = new URL('api/countries', platform)
+	else countries_path = new URL('apis/fetch/countries', platform)
+	
 	const countries_params = new URLSearchParams(countries_path)
 	countries_params.append('token', token)
 	countries_params.append('has_lab', true)
 
 	// BUILD THE PROMISES
 	const data_collection = []
-	if (window.location.hostname === 'localhost') {
-		data_collection.push(d3.json('/data/local.data.json'))
-		data_collection.push(d3.json('/data/local.regions.json'))
-		data_collection.push(d3.json('/data/local.countries.json'))
-	} else {
+	// if (window.location.hostname === 'localhost') {
+	// 	data_collection.push(d3.json('/data/local.data.json'))
+	// 	data_collection.push(d3.json('/data/local.regions.json'))
+	// 	data_collection.push(d3.json('/data/local.countries.json'))
+	// } else {
 		data_collection.push(GET(`${pads_path}?${pads_queryparams}`))
 		data_collection.push(GET(`${regions_path}?${regions_params}`))
 		data_collection.push(GET(`${countries_path}?${countries_params}`))
-	}
+	// }
 	
 	Promise.all(data_collection)
 	// FOR LOCAL
 	.then(results => {
-		const [ pads, regions, countries ] = results
+		let [ pads, regions, countries ] = results
 		countries_params.sort((a, b) => a.country.localeCompare(b.country))
-
-		// console.log(pads)
 		
+		console.log(pads)
+		if (new_api) pads = pads.data
+		console.log(pads.length)
+
 		d3.selectAll('section, div.container, a.navigation').classed('hide', false)
 		// SET UP THE DISPLAY VARIABLES
 		const { clientWidth: cw, clientHeight: ch, offsetWidth: ow, offsetHeight: oh } = d3.select('.left-col').node()
@@ -96,7 +122,6 @@ function DOMLoad () {
 
 		let nodes = pads.flat().map(d => {
 			let tags = d.tags
-			console.log(d)
 			if (!tags.some(c => c.type === 'sdgs') && d.source?.tags?.some(c => c.type === 'sdgs')) tags = d.source.tags
 			
 			const sdgs = tags?.filter(c => c.type === 'sdgs').map(c => { return { key: c.key, name: c.name } })

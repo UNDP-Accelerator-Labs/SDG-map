@@ -1,4 +1,11 @@
 const jsonQueryHeader = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+export const new_api = false;
+
+let endpoint = '';
+if (new_api) endpoint = new URL('https://staging.sdg-innovation-commons.org');
+else endpoint = new URL('https://learningplans.sdg-innovation-commons.org');
+export const platform = endpoint;
+
 export function POST (_uri, _q, _expectJSON = true) {
 	return new Promise(resolve => 
 		fetch(_uri, { method: 'POST', headers: jsonQueryHeader, body: JSON.stringify(_q) })
@@ -26,8 +33,6 @@ export const simplifyStr = function (st) {
 	if (!str) return undefined;
 	else return str.trim().replace(/[^\w\s]/gi, '').replace(/\s/g, '').toLowerCase();
 }
-// export const platform = new URL('https://learningplans.sdg-innovation-commons.org')
-export const platform = new URL('https://staging.sdg-innovation-commons.org')
 export const colors = {
 	'dark-blue': '#005687',
 	'mid-blue': '#0468B1',
