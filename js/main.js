@@ -1,5 +1,5 @@
 const jsonQueryHeader = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-export const new_api = false;
+export const new_api = true;
 
 let endpoint = '';
 if (new_api) endpoint = new URL('https://staging.sdg-innovation-commons.org');
