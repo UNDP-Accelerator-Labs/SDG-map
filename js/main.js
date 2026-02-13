@@ -2,7 +2,7 @@ const jsonQueryHeader = { 'Accept': 'application/json', 'Content-Type': 'applica
 export const new_api = true;
 
 let endpoint = '';
-if (new_api) endpoint = new URL('https://staging.sdg-innovation-commons.org');
+if (new_api) endpoint = new URL('https://www.sdg-innovation-commons.org');
 else endpoint = new URL('https://learningplans.sdg-innovation-commons.org');
 export const platform = endpoint;
 
