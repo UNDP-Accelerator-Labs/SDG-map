@@ -1,7 +1,7 @@
-import './d3.prototype.extensions.js'
-import './Array.prototype.extensions.js'
-import './String.prototype.extensions.js'
-import { platform, getCoordinates, sdgcolors, colors, chunk } from './main.js'
+import './d3.prototype.extensions.js';
+import './Array.prototype.extensions.js';
+import './String.prototype.extensions.js';
+import { platform, getCoordinates, sdgcolors, colors, chunk, new_api } from './main.js';
 
 export const txtvars = { fontsize: 12, dy: 1.3 }
 export const titlevars = { fontsize: 18, dy: 1.3 }
@@ -834,8 +834,11 @@ function displaySnippets (kwargs) {
 		.addElems('a')
 	.attrs({
 		'href': d => {
-			if (d.source_pad_id) return new URL(`en/view/pad?id=${d.pad_id}&source=${d.source_pad_id}&display=adjacent-source`, platform)
-			else return new URL(`en/view/pad?id=${d.pad_id}`, platform)
+			if (new_api) return d.url;
+			else {
+				if (d.source_pad_id) return new URL(`en/view/pad?id=${d.pad_id}&source=${d.source_pad_id}&display=adjacent-source`, platform);
+				else return new URL(`en/view/pad?id=${d.pad_id}`, platform);
+			}
 		},
 		'target': '_blank'
 	}).html(d => d.title)

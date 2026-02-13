@@ -1,5 +1,5 @@
-import './Array.prototype.extensions.js'
-import { GET, platform, new_api } from './main.js'
+import './Array.prototype.extensions.js';
+import { GET, platform, new_api } from './main.js';
 import { 
 	bundle, 
 	matrix,
@@ -8,8 +8,11 @@ import {
 	clearPanel, 
 	expandFilters,
 	renderMenu 
-} from './render.js'
-import { intro } from './intro.js'
+} from './render.js';
+import { intro } from './intro.js';
+
+// import { token } from './tokens.js';
+const use_token = false;
 
 function DOMLoad () {
 	let display = 'bundle';
@@ -27,7 +30,7 @@ function DOMLoad () {
 	
 	const pads_queryparams = new URLSearchParams(pads_path.search)
 	pads_queryparams.append('output', 'json')
-	// pads_queryparams.append('token', token)
+	if (use_token) pads_queryparams.append('token', token)
 	// INCLUDE IMAGES AND TAGS
 	pads_queryparams.append('include_imgs', true)
 	pads_queryparams.append('include_tags', true)
@@ -63,7 +66,7 @@ function DOMLoad () {
 	else regions_path = new URL('apis/fetch/regions', platform)
 	
 	const regions_params = new URLSearchParams(regions_path)
-	// regions_params.append('token', token)
+	if (use_token) regions_params.append('token', token)
 	
 	// COUNTRIES
 	let countries_path = '';
@@ -71,7 +74,7 @@ function DOMLoad () {
 	else countries_path = new URL('apis/fetch/countries', platform)
 	
 	const countries_params = new URLSearchParams(countries_path)
-	// countries_params.append('token', token)
+	if (use_token) countries_params.append('token', token)
 	countries_params.append('has_lab', true)
 
 	// BUILD THE PROMISES
